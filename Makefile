@@ -4,6 +4,12 @@ CFLAGS = -g
 LDFLAGS = -g
 LDLIBS = 
 
+.PHONE: all clean
+
+all : zipf zipw.so
+clean:
+	$(RM) -rf zipf zipw.so *~
+
 zipf :
 
 zipw.so : zipwlua.c
