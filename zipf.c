@@ -280,7 +280,7 @@ int main(int argc,char *argv[])
             {
               case ZIPE_OS_NONE:    os = "";          break;
               case ZIPE_OS_LINUX:   os = "Linux";     break;
-              case ZIPE_OS_SOLARIS: os = "Solaris";   break;
+              case ZIPE_OS_SOLARIS: os = "SunOS";     break;
               default:              os = "(unknown)"; break;
             }
             
@@ -309,7 +309,7 @@ int main(int argc,char *argv[])
                 snprintf(
                   luaver,
                   sizeof(luaver),
-                  "Lua %d.%d - %d.%d",
+                  "Lua %d.%d-%d.%d",
                   ext.luavmin >> 8,
                   ext.luavmin & 0xFF,
                   ext.luavmax >> 8,
