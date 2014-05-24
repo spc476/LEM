@@ -189,6 +189,7 @@ typedef struct
   uint16_t luavmax;	/* Lua maximum version support */
   uint16_t os;
   uint16_t cpu;
+  uint16_t version;	/* Version */
 } __attribute__((packed)) zip_lua_ext__s;
 
 typedef union
