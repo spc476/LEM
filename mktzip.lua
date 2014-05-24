@@ -5,6 +5,7 @@ local zlib  = require "zlib"
 local zipw  = require "zipw"
 
 dofile "list.lua"
+lem = io.open("sample.lem","wb")
 
 for i = 1 , #list do
   local info,err = fsys.stat(list[i].file)
@@ -24,33 +25,29 @@ for i = 1 , #list do
   if not list[i].version then
     list[i].version = "0.0"
   end  
-end
 
-for _,entry in ipairs(list) do
-  local f = io.open(entry.file,"rb")
+  local f = io.open(list[i].file,"rb")
   local d = f:read("*a")
   f:close()
   
-  entry.zip   = zlib.compress(d,9):sub(3,-5)
-  entry.crc   = zlib.crc32(0,d)
-  entry.csize = #entry.zip
-end
-
-f = io.open("sample.lem","wb")
-for _,entry in ipairs(list) do
+  list[i].zip   = zlib.compress(d,9):sub(3,-5)
+  list[i].crc   = zlib.crc32(0,d)
+  list[i].csize = #list[i].zip
+  
   local err
-  entry.offset,err = zipw.file(f,entry)
-  if not entry.offset then
-    entry.zip = nil
-    dump(errno[err],entry)
+  list[i].offset,err = zipw.file(lem,list[i])
+  if not list[i].offset then
+    list[i].zip = nil
+    dump(errno[err],list[i])
     os.exit(1)
   end
+  
+  list[i].zip = nil
 end
 
 for _,entry in ipairs(list) do
   local err
-  entry.coffset,err = zipw.dir(f,entry)
-  entry.zip = nil
+  entry.coffset,err = zipw.dir(lem,entry)
   if not entry.coffset then
     dump(errno[err],entry)
     os.exit(2)
@@ -58,12 +55,10 @@ for _,entry in ipairs(list) do
 end
 
 zipw.eocd(
-	f,
+	lem,
 	#list,
-	f:seek() - list[1].coffset,
+	lem:seek() - list[1].coffset,
 	list[1].coffset
 )
-f:close()
 
-local dump = require "org.conman.table".dump
-dump("list",list)
+lem:close()
