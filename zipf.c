@@ -62,6 +62,46 @@ typedef enum
   ZIPCOMP_PPMd = 98,
 } zipfile_comp__e; 
 
+typedef enum
+{
+  ZIPE_CPU_NONE,
+  ZIPE_CPU_ALPHA,
+  ZIPE_CPU_ARM,
+  ZIPE_CPU_AVR32,
+  ZIPE_CPU_ETRAX,
+  ZIPE_CPU_C6X,
+  ZIPE_CPU_H8,
+  ZIPE_CPU_HPPA,
+  ZIPE_CPU_IBM390,
+  ZIPE_CPU_IBMZ,
+  ZIPE_CPU_ITANIUM,
+  ZIPE_CPU_68k,
+  ZIPE_CPU_68010,
+  ZIPE_CPU_M32R,
+  ZIPE_CPU_MICROBLAZE,
+  ZIPE_CPU_MIPS,
+  ZIPE_CPU_PPC,
+  ZIPE_CPU_SH3EB,
+  ZIPE_CPU_SH3EI,
+  ZIPE_CPU_SPARC,
+  ZIPE_CPU_SPARC64,
+  ZIPE_CPU_VAX,
+  ZIPE_CPU_X86
+  ZIPE_CPU_X86_64,
+} zipe_cpu__e;
+
+typedef enum
+{
+  ZIPE_OS_NONE,
+  ZIPE_OS_AIX,
+  ZIPE_OS_BSD,
+  ZIPE_OS_FREEBSD,
+  ZIPE_OS_LINUX,
+  ZIPE_OS_MACOSX,
+  ZIPE_OS_MINGW,
+  ZIPE_OS_SOLARIS
+} zipe_os__e;
+  
 typedef struct
 {
   struct
@@ -130,6 +170,19 @@ typedef struct
   uint16_t extralen;
   uint8_t  data[];
 } __attribute__((packed)) zip_file__s;
+
+#define ZIPF_DATADESCR	(1 <<  3)
+#define ZIPF_UTF8	(1 << 11)
+
+typedef struct
+{
+  uint16_t id;		/* 0x4C45 */
+  uint16_t size;
+  uint16_t luavmin;	/* Lua minimum version support */
+  uint16_t luavmax;	/* Lua maximum version support */
+  uint16_t os;
+  uint16_t cpu;
+} __attribute__((packed)) zip_lua_ext__s;
 
 typedef union
 {
