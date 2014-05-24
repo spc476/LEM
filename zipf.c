@@ -179,6 +179,8 @@ typedef struct
 #define ZIPF_DATADESCR	(1 <<  3)
 #define ZIPF_UTF8	(1 << 11)
 
+#define ZIPIA_TEXT	(1 << 0)
+
 typedef struct
 {
   uint16_t id;		/* 0x4C45 */
