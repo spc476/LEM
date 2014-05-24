@@ -36,7 +36,8 @@ do
 	crc     = crc,
 	csize   = #meta,
 	usize   = #LEM,
-	modtime = os.time()
+	modtime = os.time(),
+	license = "none",
   })
 
   list[1].offset,err = zipw.file(lem,list[1])
@@ -65,6 +66,10 @@ for i = 2 , #list do
     list[i].version = "0.0"
   end  
 
+  if not list[i].license then
+    list[i].license = "LGPL3+"
+  end
+  
   local f = io.open(list[i].file,"rb")
   local d = f:read("*a")
   f:close()

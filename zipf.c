@@ -107,6 +107,34 @@ typedef enum
   ZIPE_OS_SOLARIS
 } zipe_os__e;
 
+typedef enum
+{
+  ZIPE_LIC_UNKNOWN,
+  ZIPE_LIC_NONE,	/* possible?		*/
+  ZIPE_LIC_PUBLIC_DOMAIN,
+  
+  ZIPE_LIC_GPL1,	/* GPL  v1 or higher	*/
+  ZIPE_LIC_GPL1e,	/* GPL  v1 only 	*/
+  ZIPE_LIC_FDL1,	/* FDL  v1 or higher	*/
+  ZIPE_LIC_FDL1e,	/* FDL  v1 only		*/
+  ZIPE_LIC_GPL2,	/* GPL  v2 or higher	*/
+  ZIPE_LIC_GPL2e,	/* GPL  v2 only		*/
+  ZIPE_LIC_LGPL2,	/* LGPL v2.1 or higher	*/
+  ZIPE_LIC_LGPL2e,	/* LGPL v2.1 only	*/
+  ZIPE_LIC_FDL2,	/* FDL  v2 or higher	*/
+  ZIPE_LIC_FDL2e,	/* FDL  v2 only		*/
+  ZIPE_LIC_GPL3,	/* GPL  v3 or higher	*/
+  ZIPE_LIC_GPL3e,	/* GPL  v3 only		*/
+  ZIPE_LIC_LGPL3,	/* LGPL v3.1 or higher	*/
+  ZIPE_LIC_LGPL3e,	/* LGPL v3.1 only	*/
+  ZIPE_LIC_FDL3,	/* FDL  v3 or higher	*/
+  ZIPE_LIC_FDL3e,	/* FDL  v3 only		*/
+  ZIPE_LIC_AGPL3,	/* AGPL v3 or higher	*/
+  ZIPE_LIC_AGPL3e,	/* AGPL v3 only		*/
+  
+  ZIPE_LIC_MIT,		/* MIT license		*/
+} zipe_license__e;
+
 typedef struct
 {
   struct
@@ -190,6 +218,7 @@ typedef struct
   uint16_t os;
   uint16_t cpu;
   uint16_t version;	/* Version */
+  uint16_t license;	/* Licence */
 } __attribute__((packed)) zip_lua_ext__s;
 
 typedef union
@@ -273,6 +302,7 @@ int main(int argc,char *argv[])
           {
             const char *os;
             const char *cpu;
+            const char *license;
             char        luaver [16];
             char        version[12];
             
@@ -290,6 +320,14 @@ int main(int argc,char *argv[])
               case ZIPE_CPU_x86:     cpu = "x86";       break;
               case ZIPE_CPU_SPARC64: cpu = "sparcv9";   break;
               default:               cpu = "(unknown)"; break;
+            }
+            
+            switch(ext.license)
+            {
+              case ZIPE_LIC_NONE:  license = "none";      break;
+              case ZIPE_LIC_LGPL3: license = "LGPL3+";    break;
+              case ZIPE_LIC_MIT:   license = "MIT";       break;
+              default:             license = "(unknown)"; break;
             }
             
             if (ext.luavmin > 0)
@@ -323,9 +361,10 @@ int main(int argc,char *argv[])
             snprintf(version,sizeof(version),"%d.%d",ext.version >> 8,ext.version & 0xFF);
             
             printf(
-              "%-9s %-9s %-16s %-12s %.*s\n",
+              "%-9s %-9s %-9s %-12s %-8s %.*s\n",
               os,
               cpu,
+              license,
               luaver,
               version,
               (int)zipfile.dir[i]->namelen,zipfile.dir[i]->data

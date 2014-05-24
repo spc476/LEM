@@ -261,6 +261,27 @@ list =
   },
   
   -- ********************************************************
+  -- Version 0.10.2 of LPeg
+  -- ********************************************************
+
+  {
+    module = "lpeg",
+    os = "Linux",
+    cpu = "x86",
+    file = "/usr/local/lib/lua/5.1/lpeg.so",
+    version = "0.10",
+    license = "MIT",
+  },
+  {
+    module = "re",
+    os = "none",
+    cpu = "none",
+    file = "/usr/local/share/lua/5.1/re.lua",
+    version = "0.10",
+    license = "MIT",
+  },
+
+  -- ********************************************************
   -- Version 0.12 of LPeg
   -- ********************************************************
   
@@ -272,6 +293,7 @@ list =
     version = "0.12",
     luamin  = "5.1",
     luamax  = "5.2",
+    license = "MIT",
   },
   {
     module = "re",
@@ -281,25 +303,7 @@ list =
     version = "0.12",
     luamin  = "5.1",
     luamax  = "5.2",
-  },
-  
-  -- ********************************************************
-  -- Version 0.10.2 of LPeg
-  -- ********************************************************
-
-  {
-    module = "lpeg",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/lpeg.so",
-    version = "0.10",
-  },
-  {
-    module = "re",
-    os = "none",
-    cpu = "none",
-    file = "/usr/local/share/lua/5.1/re.lua",
-    version = "0.10",
-  },
+    license = "MIT",
+  },  
 }
 
