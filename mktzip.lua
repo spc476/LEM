@@ -4,10 +4,50 @@ local errno = require "org.conman.errno"
 local zlib  = require "zlib"
 local zipw  = require "zipw"
 
+-- ************************************************************************
+-- The excessive use of '=' in the next line is to work around a bug in my
+-- preferred editor.  --sean@conman.org
+-- ************************************************************************
+
+LEM = [=====[
+  _VERSION = "LEM 0.9"
+  _NOTES   = [[
+  	A sample LEM file.  This isn't an application per se; it's more
+  	of a "proof-of-concept" and to show off some features of the file
+  	spec.
+  	]],
+  _X_OTHER_DATA = true,
+]=====]
+
 dofile "list.lua"
 lem = io.open("sample.lem","wb")
 
-for i = 1 , #list do
+do
+  local meta = zlib.compress(LEM,9):sub(3,-5)
+  local crc  = zlib.crc32(0,LEM)
+  local err
+
+  table.insert(list,1, {
+	module  = "_LEM",
+	os      = "none",
+	cpu     = "none",
+	version = "0.9",
+	luamin  = "5.1",
+	luamax  = "5.2",
+	crc     = crc,
+	csize   = #meta,
+	usize   = #LEM,
+	modtime = os.time()
+  })
+
+  list[1].offset,err = zipw.file(lem,list[1])
+  if not list[1].offset then
+    dump(errno[err],list[1])
+    os.exit(1)
+  end
+end
+
+for i = 2 , #list do
   local info,err = fsys.stat(list[i].file)
   if not info then
     print("ERROR",list[i].file,errno[err])
