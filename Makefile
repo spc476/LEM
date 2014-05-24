@@ -5,3 +5,6 @@ LDFLAGS = -g
 LDLIBS = 
 
 zipf :
+
+zipw.so : zipwlua.c
+	$(CC) $(CFLAGS) -shared -fPIC -o $@ $<
