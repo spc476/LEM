@@ -92,7 +92,7 @@ typedef enum
   ZIPE_CPU_i386,
   ZIPE_CPU_i486,
   ZIPE_CPU_x86,
-  ZIPE_CPU_X86_64,
+  ZIPE_CPU_x86_64,
 } zipe_cpu__e;
 
 typedef enum
@@ -106,7 +106,7 @@ typedef enum
   ZIPE_OS_MINGW,
   ZIPE_OS_SOLARIS
 } zipe_os__e;
-  
+
 typedef struct
 {
   struct
@@ -253,15 +253,88 @@ int main(int argc,char *argv[])
       
       for (size_t i = 0 ; zipfile.dir[i] != NULL ; i++)
       {
-        char byos  [64];
-        char byver [64];
-        char foros [64];
-        char forver[64];
+        zip_lua_ext__s ext;
+        char           byos  [64];
+        char           byver [64];
+        char           foros [64];
+        char           forver[64];
         
         zipfile_version(zipfile.dir[i]->byversion,byos,sizeof(byos),byver,sizeof(byver));
         zipfile_version(zipfile.dir[i]->forversion,foros,sizeof(foros),forver,sizeof(forver));
         
-        printf(
+        if (zipfile.dir[i]->extralen > 0)
+        {
+          memcpy(
+                  &ext,
+                  &zipfile.dir[i]->data[zipfile.dir[i]->namelen],
+                  sizeof(zip_lua_ext__s)
+                );
+          if (ext.id == 0x4C45)
+          {
+            const char *os;
+            const char *cpu;
+            char        luaver [16];
+            char        version[12];
+            
+            switch(ext.os)
+            {
+              case ZIPE_OS_NONE:    os = "";          break;
+              case ZIPE_OS_LINUX:   os = "Linux";     break;
+              case ZIPE_OS_SOLARIS: os = "Solaris";   break;
+              default:              os = "(unknown)"; break;
+            }
+            
+            switch(ext.cpu)
+            {
+              case ZIPE_CPU_NONE:    cpu = "";          break;
+              case ZIPE_CPU_x86:     cpu = "x86";       break;
+              case ZIPE_CPU_SPARC64: cpu = "sparcv9";   break;
+              default:               cpu = "(unknown)"; break;
+            }
+            
+            if (ext.luavmin > 0)
+            {
+              if (ext.luavmin == ext.luavmax)
+              {
+                snprintf(
+                  luaver,
+                  sizeof(luaver),
+                  "Lua %d.%d",
+                  ext.luavmin >> 8,
+                  ext.luavmin & 0xFF
+                );
+              }
+              else
+              {
+                snprintf(
+                  luaver,
+                  sizeof(luaver),
+                  "Lua %d.%d - %d.%d",
+                  ext.luavmin >> 8,
+                  ext.luavmin & 0xFF,
+                  ext.luavmax >> 8,
+                  ext.luavmax & 0xFF
+                );
+              }
+            }
+            else
+              luaver[0] = '\0';
+            
+            snprintf(version,sizeof(version),"%d.%d",ext.version >> 8,ext.version & 0xFF);
+            
+            printf(
+              "%-9s %-9s %-16s %-12s %.*s\n",
+              os,
+              cpu,
+              luaver,
+              version,
+              (int)zipfile.dir[i]->namelen,zipfile.dir[i]->data
+            );
+          }
+        }
+        else
+        {        
+          printf(
         	"name:        %.*s\n"
         	"namelen:     %10lu\n"
         	"size:        %10lu\n"
@@ -281,18 +354,10 @@ int main(int argc,char *argv[])
         	zipfile.dir[i]->eattr,
         	byos,byver,
         	foros,forver
-	);
+	  );
+        }
       }
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+            
       zipfile_close(&zipfile);
     }
   }
