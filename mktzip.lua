@@ -10,13 +10,12 @@ local zipw  = require "zipw"
 -- ************************************************************************
 
 LEM = [=====[
-  _VERSION = "LEM 0.9"
-  _NOTES   = [[
+  NOTES   = [[
   	A sample LEM file.  This isn't an application per se; it's more
   	of a "proof-of-concept" and to show off some features of the file
   	spec.
   	]],
-  _X_OTHER_DATA = true,
+  X_OTHER_DATA = true,
 ]=====]
 
 dofile "list.lua"
@@ -31,9 +30,9 @@ do
 	module  = "_LEM",
 	os      = "none",
 	cpu     = "none",
-	version = "0.9",
+	version = "0.1",
 	luamin  = "5.1",
-	luamax  = "5.2",
+	luamax  = "5.1",
 	crc     = crc,
 	csize   = #meta,
 	usize   = #LEM,
