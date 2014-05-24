@@ -193,7 +193,7 @@ static void zwlua_toluaext(lua_State *L,int idx,zip_lua_ext__s *ext)
 {
   idx       = abs_index(L,idx);
   ext->id   = ZIP_EXT_LUA;
-  ext->size = sizeof(ext) - (sizeof(uint16_t) * 2);
+  ext->size = sizeof(zip_lua_ext__s) - (sizeof(uint16_t) * 2);
   
   lua_getfield(L,idx,"luamin");
   ext->luavmin = zwlua_toversion(L,-1);
