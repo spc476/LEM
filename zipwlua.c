@@ -53,7 +53,7 @@ static uint16_t zwlua_toos(lua_State *L,int idx)
 
 /***********************************************************************/
 
-static uint16_t zwlua_tocpu(lua_State *L,int idx)
+static uint16_t zwlua_tocpu(lua_State *L,int idx,uint16_t os)
 {
   const char *cpu = luaL_checkstring(L,idx);
   
@@ -63,6 +63,13 @@ static uint16_t zwlua_tocpu(lua_State *L,int idx)
     return ZIPE_CPU_x86;
   else if (strcmp(cpu,"none") == 0)
     return ZIPE_CPU_NONE;
+  else if (strcmp(cpu,"_LEM") == 0) 
+  {
+    if (os == ZIPE_OS_NONE)
+      return ZIPE_META_LEM;
+    else
+      return luaL_error(L,"bad CPU");
+  }
   else
     return luaL_error(L,"bad CPU");
 }
@@ -100,7 +107,7 @@ static void zwlua_toluaext(lua_State *L,int idx,zip_lua_ext__s *ext)
   lua_getfield(L,idx,"os");
   ext->os = zwlua_toos(L,-1);
   lua_getfield(L,idx,"cpu");
-  ext->cpu = zwlua_tocpu(L,-1);
+  ext->cpu = zwlua_tocpu(L,-1,ext->os);
   lua_getfield(L,idx,"license");
   ext->license = zwlua_tolicense(L,-1);  
   lua_pop(L,6);

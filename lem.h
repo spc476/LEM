@@ -8,6 +8,8 @@
 #define ZIP_MAGIC_CFILE	0x02014B50
 #define ZIP_MAGIC_FILE  0x04034B50
 
+#define ZIPE_META_LEM	65535u
+
 typedef enum
 {
   ZIPE_CPU_NONE,

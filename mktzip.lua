@@ -29,7 +29,7 @@ do
   table.insert(list,1, {
 	module  = "_LEM",
 	os      = "none",
-	cpu     = "none",
+	cpu     = "_LEM",
 	version = "0.1",
 	luamin  = "5.1",
 	luamax  = "5.1",

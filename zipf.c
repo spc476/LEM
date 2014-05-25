@@ -12,6 +12,8 @@
 #define ZIP_MAGIC_CFILE	0x02014B50
 #define ZIP_MAGIC_FILE  0x04034B50
 
+#define ZIPE_META_LEM	65535u
+
 typedef enum
 {
   ZIPOS_MSDOS,
@@ -319,6 +321,12 @@ int main(int argc,char *argv[])
               case ZIPE_CPU_NONE:    cpu = "";          break;
               case ZIPE_CPU_x86:     cpu = "x86";       break;
               case ZIPE_CPU_SPARC64: cpu = "sparcv9";   break;
+              case ZIPE_META_LEM:
+                   if (ext.os == ZIPE_OS_NONE)
+                     cpu = "_LEM";
+                   else
+                     cpu = "(unknown)";
+                   break;
               default:               cpu = "(unknown)"; break;
             }
             
