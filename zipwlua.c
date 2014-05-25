@@ -18,21 +18,19 @@
 
 static uint16_t zwlua_toversion(lua_State *L,int idx)
 {
-  const char    *version;
-  char          *p;
-  unsigned long  mj;
-  unsigned long  mn;
-  
-  if (lua_isnil(L,idx))
-    return 0;
-  else
+  if (lua_isstring(L,idx))
   {
-    version = luaL_checkstring(L,idx);
-    mj      = strtoul(version,&p,10); p++;
-    mn      = strtoul(p,NULL,10);
+    char          *p;
+    const char    *version = luaL_checkstring(L,idx);
+    unsigned long  mj      = strtoul(version,&p,10); p++;
+    unsigned long  mn      = strtoul(p,NULL,10);
   
     return (uint16_t)((((uint8_t)mj) << 8) | ((uint8_t)mn));
   }
+  else if (lua_isnumber(L,idx))
+    return lua_tointeger(L,idx);
+  else
+    return 0;
 }
 
 /***********************************************************************/

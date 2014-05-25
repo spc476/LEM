@@ -16,13 +16,6 @@
 
 /***********************************************************************/
 
-static void zwlua_pushversion(lua_State *L,uint16_t version)
-{
-  lua_pushfstring(L,"%d.%d",version >> 8,version & 0xFF);
-}
-
-/***********************************************************************/
-
 static void zwlua_pushos(lua_State *L,uint16_t os)
 {
   switch(os)
@@ -79,11 +72,11 @@ static void zwlua_pushext(lua_State *L,int idx,zip_lua_ext__s *ext)
 {
   idx = abs_index(L,idx);
   
-  zwlua_pushversion(L,ext->luavmin);
+  lua_pushinteger(L,ext->luavmin);
   lua_setfield(L,idx,"luamin");
-  zwlua_pushversion(L,ext->luavmax);
+  lua_pushinteger(L,ext->luavmax);
   lua_setfield(L,idx,"luamax");
-  zwlua_pushversion(L,ext->version);
+  lua_pushinteger(L,ext->version);
   lua_setfield(L,idx,"version");
   zwlua_pushos(L,ext->os);
   lua_setfield(L,idx,"os");
