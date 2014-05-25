@@ -145,6 +145,11 @@ Currently, the code is rather rough, but it does show the potential of this.
 And much of this might change, or it might not.  It's still a work in
 progress.
 
+Also, to use the existing code base, you need to be running a POSIX system,
+and install the Lua modules from:
+
+	https://github.com/spc476/lua-conmanorg
+
 You have been warned.
 
 [1]	I'm not sure why Java picked the term "jar" for its distribution
