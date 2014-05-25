@@ -132,4 +132,4 @@ print()
 
 unix = require "org.conman.unix"
 
-dump("spc",unix.users.spc)
+dump("USER",unix.users[os.getenv("USER")])
