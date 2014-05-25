@@ -14,7 +14,7 @@ NOTES   = [[
 A sample LEM file.  This isn't an application per se; it's more of a
 "proof-of-concept" and to show off some features of the file spec.
   	]]
-X_OTHER_DATA = true,
+X_OTHER_DATA = true
 ]=====]
 
 dofile "list.lua"
