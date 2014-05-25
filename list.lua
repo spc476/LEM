@@ -1,4 +1,45 @@
 
+-- *************************************************************************
+--
+-- Each entry is a table with the following fields:
+--
+--	module = "name"		-- MANDATORY
+--		The module name as it would appear in a require() statment.
+--
+--	file = "/path/to/file"	-- MANDATORY
+--		The absolute path to the module file.
+--
+--	os = "operatingsystem"	-- MANDATORY
+--		Should be "none" if a Lua file.  Otherwise, it needs
+--		to be the value of org.conman.sys._SYSNAME
+--
+--	cpu = "cpu"		-- MANDATORY
+--		Should be "none" if a Lua file.  Otherwise, it needs
+--		to be the value of org.conman.sys._CPU
+--
+--	version = "1.0"		-- optional
+--		Defaults to "0.0" (i.e. not available).  Max version
+--		number suported is 255.255.
+--
+--	license = "license"	-- optinal
+--		Defaults to "LGPL3+" (LGPL v3 or higher).  Currently,
+--		it can be that, or "MIT".  Others will be added as needed.
+--
+--	luamin = "5.1"		-- optional
+--		Defaults to "5.1".  The minimum version of Lua that can
+--		run the module.
+--
+--	luamax = "5.1"		-- optional
+--		Defaults to "5.1".  The maximum version of Lua that can
+--		run the module.  A Lua module that can only run on one
+--		version of Lua should set the luamin and luamax to the same
+--		value.
+--
+-- The following list is an example.  It is expected for you to modify
+-- the list as it suits your needs.
+--
+-- *************************************************************************
+
 list = 
 {
   -- ********************************************************
