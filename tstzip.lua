@@ -7,6 +7,15 @@ local zipr  = require "zipr"
 local mz    = require "mz"
 local dump  = require "org.conman.table".dump
 
+
+-- *********************************************************************
+-- Any module loaded past this point *WILL* come from the supplied LEM file. 
+-- No ands, ifs or buts about it.
+-- *********************************************************************
+
+package.path  = ""
+package.cpath = ""
+
 -- ***********************************************************************
 
 local function toversion(version)
@@ -22,9 +31,19 @@ end
 
 -- ***********************************************************************
 
+local function read_data(entry,lem)
+  lem:seek('set',entry.offset)
+  local file = zipr.file(lem)
+  local com  = lem:read(file.csize)
+  return mz.inflate(com,file.usize,-15)
+end
+
+-- ***********************************************************************
+
 local VER  = 5 * 256 + 1
 local MODS = {}
 local META
+local lem
 
 do
   local _LEM
@@ -57,7 +76,7 @@ do
     end
   end
   
-  local lem  = io.open("sample.lem","rb")
+  lem  = io.open("sample.lem","rb")
   local eocd = zipr.eocd(lem);
 
   lem:seek('set',eocd.offset)
@@ -68,18 +87,46 @@ do
     if not dir then error("ERROR %s: %s","sample.lem",errno[err]) end
     store(dir)
   end
-  
-  lem:seek('set',_LEM.offset)
-  local file = zipr.file(lem)
-  local com  = lem:read(file.csize)
-  local uncom = mz.inflate(com,file.usize,-15)
 
-  local thelem,err = loadstring(uncom)
+  local thelem,err = loadstring(read_data(_LEM,lem))
   if not thelem then error("_LEM: %s",err) end
   META = {}
   setfenv(thelem,META)
   thelem()
 end
 
+-- ***********************************************************************
+
+local function zip_loader(name)
+  local data
+  local function feed()
+    local d = data
+    data = nil
+    return d
+  end
+  
+  if not MODS[name] then return string.format("\n\tno file %s",name) end
+
+  if MODS[name].os == 'none' then
+    data = read_data(MODS[name],lem)
+    return load(feed,name)
+  end
+  
+  return "\n\tshared object files not supported"
+end
+
+-- ***********************************************************************
+
 print(META.NOTES)
 
+table.insert(package.loaders,2,zip_loader)
+
+date = require "org.conman.date"
+
+print(date.tojulianday())
+print()
+print("PATH",package.path)
+print("CPATH",package.cpath)
+print()
+
+unix = require "org.conman.unix"
