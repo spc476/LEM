@@ -145,6 +145,7 @@ typedef struct
   uint16_t cpu;
   uint16_t version;	/* Version */
   uint16_t license;	/* License */
+  uint8_t   used[4];	/* gross hack, used internally */
 } __attribute__((packed)) zip_lua_ext__s;
 
 typedef struct

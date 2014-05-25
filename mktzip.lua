@@ -22,8 +22,10 @@ dofile "list.lua"
 lem = io.open("sample.lem","wb")
 
 do
-  local meta = zlib.compress(LEM,9):sub(3,-5)
-  local crc  = zlib.crc32(0,LEM)
+  local com   = zlib.compress(LEM,9)
+  local meta  = com:sub(3,-5)
+  local adler = com:sub(-4)
+  local crc   = zlib.crc32(0,LEM)
   local err
 
   table.insert(list,1, {
@@ -38,6 +40,7 @@ do
 	usize   = #LEM,
 	modtime = os.time(),
 	license = "none",
+	adler   = adler,
 	zip     = meta
   })
 
@@ -75,7 +78,9 @@ for i = 2 , #list do
   local d = f:read("*a")
   f:close()
   
-  list[i].zip   = zlib.compress(d,9):sub(3,-5)
+  local com     = zlib.compress(d,9)
+  list[i].zip   = com:sub(3,-5)
+  list[i].adler = com:sub(-4)
   list[i].crc   = zlib.crc32(0,d)
   list[i].csize = #list[i].zip
   
