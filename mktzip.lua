@@ -38,6 +38,7 @@ do
 	usize   = #LEM,
 	modtime = os.time(),
 	license = "none",
+	zip     = meta
   })
 
   list[1].offset,err = zipw.file(lem,list[1])
