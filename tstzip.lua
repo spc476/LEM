@@ -1,6 +1,5 @@
 
 local ddt   = require "org.conman.debug"
-local cc    = require "org.conman.cc"
 local errno = require "org.conman.errno"
 local zipr  = require "zipr"
 local mz    = require "mz"
