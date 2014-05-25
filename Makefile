@@ -14,3 +14,9 @@ zipf :
 
 zipw.so : zipwlua.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ $<
+
+zipr.so : ziprlua.c lem.h
+	$(CC) $(CFLAGS) -shared -fPIC -o $@ $<
+
+mz.so : mz.c
+	$(CC) $(CFLAGS) -shared -fPIC -o $@ $< -lz

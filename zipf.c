@@ -219,7 +219,6 @@ typedef struct
   uint16_t cpu;
   uint16_t version;	/* Version */
   uint16_t license;	/* Licence */
-  uint8_t  used[4];
 } __attribute__((packed)) zip_lua_ext__s;
 
 typedef union
@@ -306,7 +305,6 @@ int main(int argc,char *argv[])
             const char *license;
             char        luaver [16];
             char        version[12];
-            char        adler  [ 9];
             
             switch(ext.os)
             {
@@ -361,24 +359,13 @@ int main(int argc,char *argv[])
               luaver[0] = '\0';
             
             snprintf(version,sizeof(version),"%d.%d",ext.version >> 8,ext.version & 0xFF);
-            snprintf(
-                  adler,
-                  sizeof(adler),
-                  "%02X%02X%02X%02X",
-                  ext.used[0],
-                  ext.used[1],
-                  ext.used[2],
-                  ext.used[3]
-                );
-            
             printf(
-              "%-9s %-9s %-9s %-12s %-8s %s %.*s\n",
+              "%-9s %-9s %-9s %-12s %-8s %.*s\n",
               os,
               cpu,
               license,
               luaver,
               version,
-              adler,
               (int)zipfile.dir[i]->namelen,zipfile.dir[i]->data
             );
           }

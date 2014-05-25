@@ -3,6 +3,7 @@ local fsys  = require "org.conman.fsys"
 local errno = require "org.conman.errno"
 local zlib  = require "zlib"
 local zipw  = require "zipw"
+local mz    = require "mz"
 
 -- ************************************************************************
 -- The excessive use of '=' in the next line is to work around a bug in my
@@ -22,9 +23,8 @@ dofile "list.lua"
 lem = io.open("sample.lem","wb")
 
 do
-  local com   = zlib.compress(LEM,9)
-  local meta  = com:sub(3,-5)
-  local adler = com:sub(-4)
+  local com   = mz.deflate(LEM)
+  local meta  = com--:sub(3,-5)
   local crc   = zlib.crc32(0,LEM)
   local err
 
@@ -40,7 +40,6 @@ do
 	usize   = #LEM,
 	modtime = os.time(),
 	license = "none",
-	adler   = adler,
 	zip     = meta
   })
 
@@ -78,9 +77,8 @@ for i = 2 , #list do
   local d = f:read("*a")
   f:close()
   
-  local com     = zlib.compress(d,9)
-  list[i].zip   = com:sub(3,-5)
-  list[i].adler = com:sub(-4)
+  local com     = mz.deflate(d) --zlib.compress(d)
+  list[i].zip   = com --:sub(3,-5)
   list[i].crc   = zlib.crc32(0,d)
   list[i].csize = #list[i].zip
   

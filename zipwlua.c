@@ -102,28 +102,8 @@ static void zwlua_toluaext(lua_State *L,int idx,zip_lua_ext__s *ext)
   lua_getfield(L,idx,"cpu");
   ext->cpu = zwlua_tocpu(L,-1);
   lua_getfield(L,idx,"license");
-  ext->license = zwlua_tolicense(L,-1);
-  
-  /*------------------------------------------------------------------------
-  ; I might as well explain this gross hack while I'm here.  
-  ;
-  ; zlib is a wrapper for the deflate/inflate method described in RFC-1950
-  ; thorugh RFC-1952.  It's there.  It works.  All is fine.  Expcet that the
-  ; ZIP standard doesn't store the first two bytes nor the last four bytes
-  ; of an RFC-1950-2 stream.  The first two bytes are various flags (usually
-  ; 0x78 and 0xDA) and the last four bytes are the Adler32 checksum of the
-  ; uncompressed input.  The first two bytes, since they're always the same,
-  ; can be reconstructed for zlib.  But the last four bytes is a bit harder. 
-  ; So the Adler32 checksum is included in the Lua ZIP extended data.  I'm
-  ; not officially including this field quite yet, so it may become obsolete
-  ; at some point in the future, like when the sun go supernova or
-  ; something.
-  ;-------------------------------------------------------------------------*/
-  
-  lua_getfield(L,idx,"adler");
-  memcpy(ext->used,luaL_checkstring(L,-1),4);
-  
-  lua_pop(L,7);
+  ext->license = zwlua_tolicense(L,-1);  
+  lua_pop(L,6);
 }
 
 /***********************************************************************/
