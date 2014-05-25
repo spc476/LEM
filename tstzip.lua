@@ -105,6 +105,8 @@ local function zip_loader(name)
   f:close()
   
   local func,err = package.loadlib(lib,"luaopen_" .. name:gsub("%.","_"))
+  os.remove(lib)
+  
   if not func then
     return err
   else
