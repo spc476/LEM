@@ -1,0 +1,171 @@
+
+                               The LEM Project
+
+The LEM project is a project to make the distribution of Lua applications
+easier, through a similar mechanism that of Java's jar files.  A LEM [1] is
+a ZIP file that contains Lua modules and scripts.  And given that Lua can be
+extended to load modules from just about anywhere and from anything, we can
+load such files and modules directly from a ZIP file.
+
+So far, this is a the "proof-of-concept" stage.  I can load modules from a
+LEM file, but it's far from foolproof and could use more work.
+
+As mentioned the LEM file is a ZIP file, but one with Lua specific
+extensions.  For example, if we just list the contents of a sample LEM file:
+
+GenericUnixPrompt> unzip -l sample.lem 
+Archive:  sample.lem
+  Length     Date   Time    Name
+ --------    ----   ----    ----
+      175  05-25-14 23:26   _LEM
+    25472  05-24-14 21:10   org.conman.base64
+    13448  05-24-14 21:10   org.conman.crc
+    12200  05-24-14 21:10   org.conman.env
+    18688  05-24-14 21:10   org.conman.errno
+    57032  05-24-14 21:10   org.conman.fsys
+    24952  05-24-14 21:10   org.conman.hash
+    17664  05-24-14 21:10   org.conman.iconv
+    17648  05-24-14 21:10   org.conman.math
+    77944  05-24-14 21:10   org.conman.net
+    26296  05-24-14 21:10   org.conman.pollset
+    88256  05-24-14 21:10   org.conman.process
+    37848  05-24-14 21:10   org.conman.strcore
+    15392  05-24-14 21:10   org.conman.sys
+    24312  05-24-14 21:10   org.conman.syslog
+    14175  05-18-14 01:34   org.conman.base64
+     8214  05-18-14 01:34   org.conman.crc
+     7205  05-18-14 01:34   org.conman.env
+    10690  05-18-14 01:34   org.conman.errno
+    31885  05-18-14 01:34   org.conman.fsys
+    15567  05-18-14 01:34   org.conman.fsys.magic
+    14067  05-18-14 01:34   org.conman.hash
+    10197  05-18-14 01:34   org.conman.iconv
+    10816  05-18-14 01:34   org.conman.math
+    43651  05-18-14 01:34   org.conman.net
+    25248  04-19-14 00:06   org.conman.net.ipacl
+    15910  05-18-14 01:34   org.conman.pollset
+    49386  05-18-14 01:34   org.conman.process
+    21379  05-18-14 01:34   org.conman.strcore
+    10223  05-18-14 01:34   org.conman.sys
+    13303  05-18-14 01:34   org.conman.syslog
+    21218  05-18-14 01:34   org.conman.tcc
+     5619  05-18-14 01:34   org.conman.cc
+     2365  05-18-14 01:34   org.conman.date
+     3829  05-18-14 01:34   org.conman.debug
+     2966  05-18-14 01:34   org.conman.dns.resolv
+     3260  05-18-14 01:34   org.conman.getopt
+     1943  05-18-14 01:34   org.conman.string
+     5111  05-18-14 01:34   org.conman.table
+     2820  05-18-14 01:34   org.conman.unix
+    40081  05-25-14 19:17   lpeg
+     6029  05-24-14 04:36   re
+    40045  05-25-14 21:07   lpeg
+    40045  05-25-14 21:07   lpeg
+     6286  05-25-14 21:07   re
+ --------                   -------
+   940860                   45 files
+
+One immedate things comes to mind---there are no file extensions.  They're
+not required (for reasons that will become apparent).  Second thing that
+comes to mind---there are duplicate modules.  Only they aren't exact
+duplicates, as this output (from a custom tool provided in this
+distribution) shows:
+
+GenericUnixPrompt> ./zipf sample.lem 
+          _LEM      none      Lua 5.1      0.1      _LEM
+SunOS     sparcv9   LGPL3+    Lua 5.1      0.0      org.conman.base64
+SunOS     sparcv9   LGPL3+    Lua 5.1      0.0      org.conman.crc
+SunOS     sparcv9   LGPL3+    Lua 5.1      5.1      org.conman.env
+SunOS     sparcv9   LGPL3+    Lua 5.1      5.1      org.conman.errno
+SunOS     sparcv9   LGPL3+    Lua 5.1      0.0      org.conman.fsys
+SunOS     sparcv9   LGPL3+    Lua 5.1      0.0      org.conman.hash
+SunOS     sparcv9   LGPL3+    Lua 5.1      1.1      org.conman.iconv
+SunOS     sparcv9   LGPL3+    Lua 5.1      5.1      org.conman.math
+SunOS     sparcv9   LGPL3+    Lua 5.1      0.0      org.conman.net
+SunOS     sparcv9   LGPL3+    Lua 5.1      0.0      org.conman.pollset
+SunOS     sparcv9   LGPL3+    Lua 5.1      0.0      org.conman.process
+SunOS     sparcv9   LGPL3+    Lua 5.1      0.0      org.conman.strcore
+SunOS     sparcv9   LGPL3+    Lua 5.1      0.0      org.conman.sys
+SunOS     sparcv9   LGPL3+    Lua 5.1      5.1      org.conman.syslog
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.base64
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.crc
+Linux     x86       LGPL3+    Lua 5.1      5.1      org.conman.env
+Linux     x86       LGPL3+    Lua 5.1      5.1      org.conman.errno
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.fsys
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.fsys.magic
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.hash
+Linux     x86       LGPL3+    Lua 5.1      1.1      org.conman.iconv
+Linux     x86       LGPL3+    Lua 5.1      5.1      org.conman.math
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.net
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.net.ipacl
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.pollset
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.process
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.strcore
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.sys
+Linux     x86       LGPL3+    Lua 5.1      5.1      org.conman.syslog
+Linux     x86       LGPL3+    Lua 5.1      0.0      org.conman.tcc
+                    LGPL3+    Lua 5.1      0.0      org.conman.cc
+                    LGPL3+    Lua 5.1      0.0      org.conman.date
+                    LGPL3+    Lua 5.1      0.0      org.conman.debug
+                    LGPL3+    Lua 5.1      0.0      org.conman.dns.resolv
+                    LGPL3+    Lua 5.1      0.0      org.conman.getopt
+                    LGPL3+    Lua 5.1      0.0      org.conman.string
+                    LGPL3+    Lua 5.1      0.0      org.conman.table
+                    LGPL3+    Lua 5.1      0.0      org.conman.unix
+Linux     x86       MIT       Lua 5.1      0.10     lpeg
+                    MIT       Lua 5.1      0.10     re
+Linux     x86       MIT       Lua 5.1      0.12     lpeg
+Linux     x86       MIT       Lua 5.2      0.12     lpeg
+                    MIT       Lua 5.1-5.2  0.12     re
+
+The first column shows the operating system the module is intended to be
+used for, in this case we have some Linux modules and some Solaris [2]
+modules.  The files that don't have an operating system listed are in Lua
+(text files with Lua code).  The second column lists the architecture (for
+Solaris, it's a 64 bit SPARC architecture; the Linux ones are 32 bit
+Pentiums).  The third column lists the license for each module (given that I
+was including a bunch of other metainformtaion about the modules, I felt
+that including the license was a no-brainer).  The fourth column lists the
+minimum and maximum Lua versions the module can run under.  The fifth column
+is the version of the module itself, and the last column is the module name
+(or "file name" if you will).  
+
+So now you can see that even though we have three different LPeg [3]
+modules, all for an x86 Linux system, one is LPeg 0.10 for Lua 5.1, one is
+LPeg 0.12 for Lua 5.1 and the third is LPeg 0.12 for Lua 5.2.  This shows
+that not only can you include operating system specific modules, but Lua
+specific modules, and version specific modules, all in the same LEM file.
+
+I should note that this information isn't stored in the _LEM file listed
+first---it's stored at extra information associated with each file (the ZIP
+standard [4] allows applications to include addtional information with each
+file).
+
+Currently, the code is rather rough, but it does show the potential of this. 
+And much of this might change, or it might not.  It's still a work in
+progress.
+
+You have been warned.
+
+[1]	I'm not sure why Java picked the term "jar" for its distribution
+	file name, but I suspect it's because a "jar" can hold coffee
+	("java" is a slang term for "coffee" in the US).
+
+	The main method of module installation is the LuaRock, named so
+	because "Lua" is Portuguese for "moon" and what you have on the
+	Moon?  Rocks.  Thus LuaRocks (and it does).  But what name to use to
+	designate a self-contained Lua application?  What can carry a bunch
+	of LuaRocks as well as the main application?
+
+	Well, there's NASA's Apollo Project with its Lunar Excursion Module,
+	(LEM), the actual vehicle that landed on the Moon, and was able to
+	bring back a lot of moon rocks.
+
+	And for me, that's a good enough name.  
+
+[2]	Why "SunOS" then?  Because that's how Solaris identifies itself via
+	uame(), that's why.  Also, the C compiler defines "__SunOS".
+
+[3]	http://www.inf.puc-rio.br/~roberto/lpeg/
+
+[4]	See APPNOTE.TXT
