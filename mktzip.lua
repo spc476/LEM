@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 -- ***************************************************************
 --
 -- Copyright 2014 by Sean Conner.  All Rights Reserved.
