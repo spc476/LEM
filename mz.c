@@ -54,7 +54,8 @@ static int mz_inflate(lua_State *L)
 static int mz_deflate(lua_State *L)
 {
   size_t      size;
-  const char *data = luaL_checklstring(L,1,&size);
+  const char *data  = luaL_checklstring(L,1,&size);
+  int         level = luaL_optinteger(L,2,Z_DEFAULT_COMPRESSION);
   z_stream    sin;
   Bytef      *out;
   int         rc;
@@ -68,7 +69,7 @@ static int mz_deflate(lua_State *L)
   
   rc = deflateInit2(
           &sin,
-          Z_DEFAULT_COMPRESSION,
+          level,
           Z_DEFLATED,
           -MAX_WBITS,
           DEF_MEM_LEVEL,
