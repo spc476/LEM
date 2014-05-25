@@ -119,7 +119,7 @@ static modtime__s zwlua_tomodtime(lua_State *L,int idx)
   
   mod.modtime = (stm.tm_hour << 11)
               | (stm.tm_min  <<  5)
-              | (stm.tm_sec  <<  0)
+              | (stm.tm_sec  >>  1) /* 2 second increment */
               ;
   mod.moddate = (((stm.tm_year + 1900) - 1980) << 9)
               |  ((stm.tm_mon  +    1)         << 5)
