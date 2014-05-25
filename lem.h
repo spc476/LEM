@@ -135,7 +135,7 @@ typedef struct
 } __attribute__((packed)) zip_file__s;
 
 #define ZIPIA_TEXT	(1 << 0)
-#define ZIP_EXT_LUA	0x4C45
+#define ZIP_EXT_LUA	0x454C
 
 typedef struct
 {
