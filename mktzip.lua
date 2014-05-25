@@ -1,7 +1,6 @@
 
 local fsys  = require "org.conman.fsys"
 local errno = require "org.conman.errno"
-local zlib  = require "zlib"
 local zipw  = require "zipw"
 local mz    = require "mz"
 
@@ -24,8 +23,8 @@ lem = io.open("sample.lem","wb")
 
 do
   local com   = mz.deflate(LEM)
-  local meta  = com--:sub(3,-5)
-  local crc   = zlib.crc32(0,LEM)
+  local meta  = com
+  local crc   = mz.crc(LEM)
   local err
 
   table.insert(list,1, {
@@ -77,9 +76,9 @@ for i = 2 , #list do
   local d = f:read("*a")
   f:close()
   
-  local com     = mz.deflate(d) --zlib.compress(d)
-  list[i].zip   = com --:sub(3,-5)
-  list[i].crc   = zlib.crc32(0,d)
+  local com     = mz.deflate(d)
+  list[i].zip   = com
+  list[i].crc   = mz.crc(d)
   list[i].csize = #list[i].zip
   
   local err

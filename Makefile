@@ -6,13 +6,13 @@ LDLIBS =
 
 .PHONE: all clean
 
-all : zipf zipw.so
+all : zipf zipw.so zipr.so mz.so
 clean:
-	$(RM) -rf zipf zipw.so *~
+	$(RM) -rf zipf zipw.so zipr.so mz.so *~
 
 zipf :
 
-zipw.so : zipwlua.c
+zipw.so : zipwlua.c lem.h
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ $<
 
 zipr.so : ziprlua.c lem.h
