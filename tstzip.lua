@@ -1,7 +1,5 @@
 
-local idiv  = require "org.conman.math".idiv
 local sys   = require "org.conman.sys"
-local ddt   = require "org.conman.debug"
 local errno = require "org.conman.errno"
 local zipr  = require "zipr"
 local mz    = require "mz"
@@ -15,12 +13,6 @@ local dump  = require "org.conman.table".dump
 
 package.path  = ""
 package.cpath = ""
-
--- ***********************************************************************
-
-local function toversion(version)
-  return string.format("%d.%d",idiv(version,256))
-end
 
 -- ***********************************************************************
 
@@ -98,35 +90,44 @@ end
 -- ***********************************************************************
 
 local function zip_loader(name)
-  local data
-  local function feed()
-    local d = data
-    data = nil
-    return d
-  end
-  
   if not MODS[name] then return string.format("\n\tno file %s",name) end
 
   if MODS[name].os == 'none' then
-    data = read_data(MODS[name],lem)
-    return load(feed,name)
+    local data = read_data(MODS[name],lem)
+    return load(function() local d = data data = nil return d end,name)
   end
   
-  return "\n\tshared object files not supported"
+  local lib  = os.tmpname()
+  local f    = io.open(lib,"wb")
+  local data = read_data(MODS[name],lem)
+
+  f:write(data)
+  f:close()
+  
+  local func,err = package.loadlib(lib,"luaopen_" .. name:gsub("%.","_"))
+  if not func then
+    return err
+  else
+    return func
+  end  
 end
 
 -- ***********************************************************************
 
-print(META.NOTES)
-
 table.insert(package.loaders,2,zip_loader)
+
+print("PATH",package.path)
+print("CPATH",package.cpath)
+
+print()
+print(META.NOTES)
 
 date = require "org.conman.date"
 
-print(date.tojulianday())
 print()
-print("PATH",package.path)
-print("CPATH",package.cpath)
+print(date.tojulianday())
 print()
 
 unix = require "org.conman.unix"
+
+dump("spc",unix.users.spc)
