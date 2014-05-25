@@ -5,106 +5,81 @@ local ddt   = require "org.conman.debug"
 local errno = require "org.conman.errno"
 local zipr  = require "zipr"
 local mz    = require "mz"
+local dump  = require "org.conman.table".dump
 
-local dump = require "org.conman.table".dump
+-- ***********************************************************************
 
 local function toversion(version)
   return string.format("%d.%d",idiv(version,256))
 end
 
-lem = io.open("sample.lem","rb")
-eocd = zipr.eocd(lem);
+-- ***********************************************************************
 
-dump("eocd",eocd)
-
-lem:seek('set',eocd.offset)
-
-modules = {}
-seqmod = {}
-
-for i = 1 , eocd.numentries do
-  dir,err = zipr.dir(lem)
-  modules[dir.module] = dir
-  table.insert(seqmod,dir)
+local function error(...)
+  io.stderr:write(string.format(...),"\n")
+  os.exit(1)
 end
 
-if false then
-  meta = modules._LEM
-  dump("LEM",meta)
+-- ***********************************************************************
 
-  lem:seek('set',meta.offset)
-  file = zipr.file(lem)
+local VER  = 5 * 256 + 1
+local MODS = {}
+local META
 
-  dump("file",file)
-
-  com = lem:read(meta.csize)
-
-  print(#com)
-
-  uncom =  mz.inflate(com,meta.usize,-15)
-  print(uncom)
-end
-
-local _META
-local lua = {}
-local lib = {}
-
-local VER = 5 * 256 + 1 
-
-local function store(entry)
-  local function add(list,entry)
-    if VER < entry.luamin then
-      return
-    end
-    
-    if VER > entry.luamax then
-      return
-    end
-  
-    if list[entry.module] then
-      if entry.version < list[entry.module].version then
+do
+  local _LEM
+  local function store(entry)
+    local function add()
+      if VER < entry.luamin or VER > entry.luamax then
         return
       end
+      
+      if MODS[entry.module] then
+        if entry.version < MODS[entry.module].version then
+          return
+        end
+      end
+      
+      MODS[entry.module] = entry
     end
-    list[entry.module] = entry
-  end
-  
-  if entry.file == "_LEM" then
-    _META = entry
-    return
-  end
-  
-  if entry.os == 'none' then
-    add(lua,entry)
-  else
-    if entry.os ~= sys._SYSNAME then
+    
+    if entry.file == "_LEM" then
+      _LEM = entry
       return
     end
     
-    if entry.cpu ~= sys._CPU then
-      return
+    if entry.os == 'none' then
+      add()
+    else
+      if entry.os == sys._SYSNAME and entry.cpu == sys._CPU then
+        add()
+      end      
     end
-    
-    add(lib,entry)
   end
-end
-    
-for _,entry in ipairs(seqmod) do
-  store(entry)
+  
+  local lem  = io.open("sample.lem","rb")
+  local eocd = zipr.eocd(lem);
+
+  lem:seek('set',eocd.offset)
+
+  for i = 1 , eocd.numentries do
+    local dir,err = zipr.dir(lem)
+  
+    if not dir then error("ERROR %s: %s","sample.lem",errno[err]) end
+    store(dir)
+  end
+  
+  lem:seek('set',_LEM.offset)
+  local file = zipr.file(lem)
+  local com  = lem:read(file.csize)
+  local uncom = mz.inflate(com,file.usize,-15)
+
+  local thelem,err = loadstring(uncom)
+  if not thelem then error("_LEM: %s",err) end
+  META = {}
+  setfenv(thelem,META)
+  thelem()
 end
 
-lem:seek('set',_META.offset)
-file = zipr.file(lem)
-com = lem:read(_META.csize)
-uncom = mz.inflate(com,file.usize,-15)
-print(uncom)
+print(META.NOTES)
 
-for name,meta in pairs(lua) do
-  print("","",toversion(meta.version),name)
-end
-
-for name,meta in pairs(lib) do
-  print(meta.os or "",meta.cpu or "",toversion(meta.version),name)
-end
-
-lem:close()
