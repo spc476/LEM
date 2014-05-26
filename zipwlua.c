@@ -201,7 +201,9 @@ static int zipwlua_file(lua_State *L)
   name = luaL_checklstring(L,-1,&namelen);
 
   zwlua_tofile(L,2,&file);
-  
+
+  /* FIXME: adjust byte order on big endian systems */
+    
   if (
           (fwrite(&file,sizeof(zip_file__s),1,*pfp)   != 1)
        || (fwrite(name,1,namelen,*pfp)                != namelen)
@@ -259,6 +261,8 @@ static int zipwlua_dir(lua_State *L)
   lua_getfield(L,2,"offset");
   dir.offset = lua_tonumber(L,-1);
 
+  /* FIXME: adjust byte order on big endian systems */
+
   if (
           (fwrite(&dir,sizeof(zip_dir__s),1,*pfp)     != 1)
        || (fwrite(name,1,namelen,*pfp)                != namelen)
@@ -291,6 +295,8 @@ static int zipwlua_eocd(lua_State *L)
   eocd.size         = lua_tointeger(L,3);
   eocd.offset       = lua_tointeger(L,4);
   eocd.commentlen   = 0;
+
+  /* FIXME: adjust byte order on big endian systems */
   
   fwrite(&eocd,sizeof(zip_eocd__s),1,*pfp);
   lua_pushinteger(L,0);

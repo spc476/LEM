@@ -140,6 +140,8 @@ static int ziprlua_file(lua_State *L)
     return 2;
   }
   
+  /* FIXME: adjust byte order on big endian systems */
+
   if (
        (file.magic != ZIP_MAGIC_FILE)
        || (file.compression !=  8)
@@ -179,6 +181,8 @@ static int ziprlua_file(lua_State *L)
       return 2;
     }
     
+    /* FIXME: adjust byte order on big endian systems */
+    
     if (
          (ext.id != ZIP_EXT_LUA)
          || (ext.size != sizeof(zip_lua_ext__s) - (sizeof(uint16_t) * 2))
@@ -214,6 +218,8 @@ static int ziprlua_dir(lua_State *L)
     lua_pushinteger(L,errno);
     return 2;
   }
+
+  /* FIXME: adjust byte order on big endian systems */
   
   if (
           (dir.magic       != ZIP_MAGIC_CFILE)
@@ -258,6 +264,8 @@ static int ziprlua_dir(lua_State *L)
       return 2;
     }
     
+    /* FIXME: adjust byte order on big endian systems */
+    
     if (
             (ext.id   != ZIP_EXT_LUA)
          || (ext.size != sizeof(zip_lua_ext__s) - (sizeof(uint16_t) * 2))
@@ -300,6 +308,8 @@ static int ziprlua_eocd(lua_State *L)
     lua_pushinteger(L,ENODATA);
     return 2;
   }
+  
+  /* FIXME: adjust byte order on big endian systems */
   
   if (eocd.magic != ZIP_MAGIC_EOCD)
   {
