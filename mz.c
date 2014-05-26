@@ -44,6 +44,13 @@ static int mz_inflate(lua_State *L)
   sin.avail_in  = 0;
   sin.avail_out = 0;
   
+  /*-----------------------------------------------------------------------
+  ; The documentation for zlib() states that when using inflateInit2() with
+  ; a windowBits value between -8 and -15 will not expect normal deflate
+  ; data (with the typical header and hash) but the raw deflate data, which
+  ; is what ZIP files use, thus the use of -MAX_WBITS here.
+  ;-----------------------------------------------------------------------*/
+  
   rc = inflateInit2(&sin,-MAX_WBITS);
   if (rc != Z_OK)
   {
@@ -54,6 +61,12 @@ static int mz_inflate(lua_State *L)
   
   do
   {
+    /*-------------------------------------------------------------------
+    ; we pull some data in (from the source function), do a little dance,
+    ; then push some data out (to the sink function).  We keep doing this
+    ; until we're done.
+    ;--------------------------------------------------------------------*/
+    
     if (sin.avail_in == 0)
     {  
       lua_pushvalue(L,1);
@@ -118,7 +131,14 @@ static int mz_deflate(lua_State *L)
   sin.opaque    = Z_NULL;
   sin.avail_in  = 0;
   sin.avail_out = 0;
-    
+  
+  /*-----------------------------------------------------------------------
+  ; To keep from generating the deflate header and hash, we need to inform
+  ; zlib() that we want just the raw data.  To do so, we call deflateInit2()
+  ; with a bunch of default values, except for the windowBits paramter,
+  ; which is negative, informing zlib() we just want the raw data.
+  ;------------------------------------------------------------------------*/
+  
   rc = deflateInit2(
           &sin,
           lua_tointeger(L,1),
@@ -135,7 +155,11 @@ static int mz_deflate(lua_State *L)
   }
 
   do
-  {    
+  {
+    /*----------------------------------------
+    ; again with the pull/push dance of data
+    ;-----------------------------------------*/
+    
     if (sin.avail_in == 0)
     {
       lua_pushvalue(L,2);
