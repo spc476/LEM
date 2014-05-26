@@ -42,8 +42,22 @@ dofile "list.lua"
 lem = io.open("sample.lem","wb")
 
 do
-  local com   = mz.deflate(LEM)
-  local crc   = mz.crc(LEM)
+  local com = {}
+  local x = LEM
+
+  local rc,err = mz.deflate(
+  	function()
+  	  local s = x
+  	  x = nil
+  	  return s
+  	end,
+  	function(s)
+  	  com[#com + 1] = s
+  	end
+  )
+  
+  com       = table.concat(com)
+  local crc = mz.crc(0,LEM)
   local err
 
   table.insert(list,1, {
@@ -94,11 +108,24 @@ for i = 2 , #list do
   end
   
   local f = io.open(list[i].file,"rb")
-  local d = f:read("*a")
+  local com = {}
+  local crc = 0
+  local rc,err = mz.deflate(
+  	function()
+  	  local d = f:read(8192)
+  	  if d then
+  	    crc = mz.crc(crc,d)
+  	  end
+  	  return d
+  	end,
+  	function(s)
+  	  com[#com + 1] = s
+  	end
+  )
   f:close()
   
-  local com     = mz.deflate(d)
-  list[i].crc   = mz.crc(d)
+  com           = table.concat(com)
+  list[i].crc   = crc
   list[i].csize = #com
   
   local err

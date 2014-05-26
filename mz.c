@@ -99,23 +99,29 @@ static int mz_inflate(lua_State *L)
 
 static int mz_deflate(lua_State *L)
 {
-  size_t      size;
-  const char *data  = luaL_checklstring(L,1,&size);
-  int         level = luaL_optinteger(L,2,Z_DEFAULT_COMPRESSION);
-  z_stream    sin;
-  Bytef      *out;
-  int         rc;
+  z_stream sin;
+  Bytef    out[LUAL_BUFFERSIZE];
+  int      flush;
+  int      rc;
   
-  out           = malloc(size);
+  if (lua_gettop(L) == 2)
+  {
+    lua_pushinteger(L,Z_DEFAULT_COMPRESSION);
+    lua_insert(L,1);
+  }
+  
+  luaL_checktype(L,2,LUA_TFUNCTION);
+  luaL_checktype(L,3,LUA_TFUNCTION);
+
   sin.zalloc    = Z_NULL;
   sin.zfree     = Z_NULL;
   sin.opaque    = Z_NULL;
   sin.avail_in  = 0;
   sin.avail_out = 0;
-  
+    
   rc = deflateInit2(
           &sin,
-          level,
+          lua_tointeger(L,1),
           Z_DEFLATED,
           -MAX_WBITS,
           DEF_MEM_LEVEL,
@@ -127,41 +133,62 @@ static int mz_deflate(lua_State *L)
     lua_pushstring(L,sin.msg);
     return 2;
   }
-  
-  sin.next_in   = (Bytef *)data;
-  sin.avail_in  = size;
-  sin.next_out  = out;
-  sin.avail_out = size;
-  
-  rc = deflate(&sin,Z_FINISH);
-  if (rc != Z_STREAM_END)
-  {
-    lua_pushnil(L);
-    lua_pushstring(L,sin.msg);
-    return 2;
-  }
-  
+
+  do
+  {    
+    if (sin.avail_in == 0)
+    {
+      lua_pushvalue(L,2);
+      lua_call(L,0,1);
+      sin.next_in = (Byte *)lua_tolstring(L,-1,&sin.avail_in);
+      lua_pop(L,1);
+      flush = (sin.avail_in == 0) 
+            ? Z_FINISH 
+            : Z_SYNC_FLUSH
+            ;
+    }
+    
+    sin.next_out  = out;
+    sin.avail_out = sizeof(out);
+    
+    rc = deflate(&sin,flush);
+    
+    if ((rc == Z_OK) || (rc == Z_STREAM_END))
+    {
+      lua_pushvalue(L,3);
+      lua_pushlstring(L,(char *)out,sizeof(out) - sin.avail_out);
+      lua_call(L,1,0);
+    }
+    else
+    {
+      lua_pushinteger(L,rc);
+      lua_pushstring(L,sin.msg);
+      return 2;
+    }
+  } while(rc != Z_STREAM_END);
+
   rc = deflateEnd(&sin);
   if (rc != Z_OK)
   {
-    lua_pushnil(L);
+    lua_pushinteger(L,rc);
     lua_pushstring(L,sin.msg);
     return 2;
   }
   
-  lua_pushlstring(L,(char *)out,(size_t)sin.total_out);
-  free(out);
-  return 1;
+  lua_pushinteger(L,0);
+  lua_pushliteral(L,"Success");
+  return 2;
 }
 
 /**************************************************************************/
 
 static int mz_crc32(lua_State *L)
 {
-  size_t      size;
-  const char *data = luaL_checklstring(L,1,&size);
+  unsigned long  initcrc = luaL_checknumber(L,1);
+  size_t         size;
+  const char    *data    = luaL_checklstring(L,2,&size);
   
-  lua_pushnumber(L,crc32(0,(Byte *)data,size));
+  lua_pushnumber(L,crc32(initcrc,(Byte *)data,size));
   return 1;
 }
 
