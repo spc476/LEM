@@ -46,7 +46,12 @@ static int mz_inflate(lua_State *L)
   sin.avail_out = 0;
   
   rc = inflateInit2(&sin,-MAX_WBITS);
-  if (rc != Z_OK) { printf("1 %d %s\n",rc,sin.msg); exit(1); }
+  if (rc != Z_OK)
+  {
+    lua_pushnil(L);
+    lua_pushstring(L,sin.msg);
+    return 2;
+  }
   
   sin.next_in   = (Byte *)blob;
   sin.avail_in  = bsize;
@@ -55,15 +60,19 @@ static int mz_inflate(lua_State *L)
   
   rc = inflate(&sin,Z_FINISH);
   if (rc != Z_STREAM_END) 
-  { 
-    printf("2 %d %s\n",rc,sin.msg);
-    printf("2 %lu\n",sin.total_in);
-    printf("2 %lu\n",sin.total_out);
-    exit(1);
+  {
+    lua_pushnil(L);
+    lua_pushstring(L,sin.msg);
+    return 2;
   }
   
   rc = inflateEnd(&sin);
-  if (rc != Z_OK) { printf("3 %d %s\n",rc,sin.msg); exit(1); }
+  if (rc != Z_OK)
+  {
+    lua_pushnil(L);
+    lua_pushstring(L,sin.msg);
+    return 2;
+  }
   
   lua_pushlstring(L,(char *)out,big);
   free(out);
@@ -96,7 +105,12 @@ static int mz_deflate(lua_State *L)
           DEF_MEM_LEVEL,
           Z_DEFAULT_STRATEGY
   );
-  if (rc != Z_OK) { printf("1 %d %s\n",rc,sin.msg); exit(1); }
+  if (rc != Z_OK)
+  {
+    lua_pushnil(L);
+    lua_pushstring(L,sin.msg);
+    return 2;
+  }
   
   sin.next_in   = (Bytef *)data;
   sin.avail_in  = size;
@@ -104,10 +118,20 @@ static int mz_deflate(lua_State *L)
   sin.avail_out = size;
   
   rc = deflate(&sin,Z_FINISH);
-  if (rc != Z_STREAM_END) { printf("2 %d %s\n",rc,sin.msg); exit(1); }
+  if (rc != Z_STREAM_END)
+  {
+    lua_pushnil(L);
+    lua_pushstring(L,sin.msg);
+    return 2;
+  }
   
   rc = deflateEnd(&sin);
-  if (rc != Z_OK) { printf("3 %d %s\n",rc,sin.msg); exit(1); }
+  if (rc != Z_OK)
+  {
+    lua_pushnil(L);
+    lua_pushstring(L,sin.msg);
+    return 2;
+  }
   
   lua_pushlstring(L,(char *)out,(size_t)sin.total_out);
   free(out);
