@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
@@ -155,7 +156,7 @@ static modtime__s zwlua_tomodtime(lua_State *L,int idx)
 
 /***********************************************************************/
 
-static void zwlua_tofile(lua_State *L,int idx,zip_file__s *file)
+static void zwlua_tofile(lua_State *L,int idx,zip_file__s *file,bool luaext)
 {
   modtime__s mod;
   
@@ -177,7 +178,7 @@ static void zwlua_tofile(lua_State *L,int idx,zip_file__s *file)
   file->usize = lua_tointeger(L,-1);
   lua_getfield(L,idx,"module");
   file->namelen  = lua_objlen(L,-1);
-  file->extralen = sizeof(zip_lua_ext__s);
+  file->extralen = luaext ? sizeof(zip_lua_ext__s) : 0 ;
   file->flags    = 0;
   lua_pop(L,5);
 }
@@ -191,23 +192,23 @@ static int zipwlua_file(lua_State *L)
   zip_file__s      file;
   zip_lua_ext__s   ext;
   const char      *name;
-  size_t           namelen;
 
+  lua_settop(L,3);
   pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
   pos = ftell(*pfp);
   luaL_checktype(L,2,LUA_TTABLE);
   zwlua_toluaext(L,2,&ext);
   lua_getfield(L,2,"module");
-  name = luaL_checklstring(L,-1,&namelen);
+  name = luaL_checkstring(L,-1);
 
-  zwlua_tofile(L,2,&file);
+  zwlua_tofile(L,2,&file,lua_toboolean(L,3));
 
   /* FIXME: adjust byte order on big endian systems */
     
   if (
-          (fwrite(&file,sizeof(zip_file__s),1,*pfp)   != 1)
-       || (fwrite(name,1,namelen,*pfp)                != namelen)
-       || (fwrite(&ext,sizeof(zip_lua_ext__s),1,*pfp) != 1)
+          (fwrite(&file,sizeof(zip_file__s),1,*pfp) != 1)
+       || (fwrite(name,1,file.namelen,*pfp)         != file.namelen)
+       || (fwrite(&ext,file.extralen,1,*pfp)        != 1)
      )
   {
     lua_pushnil(L);
@@ -230,16 +231,16 @@ static int zipwlua_dir(lua_State *L)
   zip_file__s      file;
   zip_lua_ext__s   ext;
   const char      *name;
-  size_t           namelen;
 
+  lua_settop(L,3);
   pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
   pos = ftell(*pfp);
   luaL_checktype(L,2,LUA_TTABLE);
   zwlua_toluaext(L,2,&ext);
   lua_getfield(L,2,"module");
-  name   = luaL_checklstring(L,-1,&namelen);
+  name   = luaL_checkstring(L,-1);
 
-  zwlua_tofile(L,2,&file);
+  zwlua_tofile(L,2,&file,lua_toboolean(L,3));
   
   dir.magic       = ZIP_MAGIC_CFILE;
   dir.byversion   = file.byversion;
@@ -264,9 +265,9 @@ static int zipwlua_dir(lua_State *L)
   /* FIXME: adjust byte order on big endian systems */
 
   if (
-          (fwrite(&dir,sizeof(zip_dir__s),1,*pfp)     != 1)
-       || (fwrite(name,1,namelen,*pfp)                != namelen)
-       || (fwrite(&ext,sizeof(zip_lua_ext__s),1,*pfp) != 1)
+          (fwrite(&dir,sizeof(zip_dir__s),1,*pfp) != 1)
+       || (fwrite(name,1,dir.namelen,*pfp)        != dir.namelen)
+       || (fwrite(&ext,dir.extralen,1,*pfp)       != 1)
      )
   {
     lua_pushnil(L);

@@ -20,6 +20,7 @@
 --
 -- ********************************************************************
 
+local dump  = require "org.conman.table".dump
 local fsys  = require "org.conman.fsys"
 local errno = require "org.conman.errno"
 local zipw  = require "zipw"
@@ -74,7 +75,7 @@ do
 	license = "none",
   })
 
-  list[1].offset,err = zipw.file(lem,list[1])
+  list[1].offset,err = zipw.file(lem,list[1],true)
 
   if not list[1].offset then
     dump(errno[err],list[1])
@@ -129,7 +130,7 @@ for i = 2 , #list do
   list[i].csize = #com
   
   local err
-  list[i].offset,err = zipw.file(lem,list[i])
+  list[i].offset,err = zipw.file(lem,list[i],true)
   if not list[i].offset then
     list[i].zip = nil
     dump(errno[err],list[i])
@@ -142,7 +143,7 @@ end
 
 for _,entry in ipairs(list) do
   local err
-  entry.coffset,err = zipw.dir(lem,entry)
+  entry.coffset,err = zipw.dir(lem,entry,true)
   if not entry.coffset then
     dump(errno[err],entry)
     os.exit(2)
