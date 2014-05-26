@@ -46,8 +46,10 @@ end
 local function read_data(entry,lem,sink)
   lem:seek('set',entry.offset)
   local file = zipr.file(lem)
-  local com  = lem:read(file.csize)
-  mz.inflate(com,sink)
+  
+  local rc,err = mz.inflate(function()  
+    return lem:read(file.csize)
+  end,sink)  
 end
 
 -- ***********************************************************************
@@ -102,7 +104,7 @@ do
 
   local data = {}
   read_data(_LEM,lem,function(s) data[#data + 1] = s end)
-  local thelem,err = load(function() return table.remove(data,1) end)
+  local thelem,err = load(function() return table.remove(data,1) end,"_LEM")
   
   if not thelem then error("_LEM: %s",err) end
   
@@ -119,7 +121,9 @@ local function zip_loader(name)
   if MODS[name].os == 'none' then
     local data = {}
     read_data(MODS[name],lem,function(s) data[#data + 1] = s end)
-    return load(function() return table.remove(data,1) end)
+    local func,err = load(function() return table.remove(data,1) end,name)
+    if not func then error("%s: %s",name,err) end
+    return func
   end
     
   local lib  = os.tmpname()

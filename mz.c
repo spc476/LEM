@@ -31,12 +31,11 @@
 
 static int mz_inflate(lua_State *L)
 {
-  size_t      bsize;
-  const char *blob = luaL_checklstring(L,1,&bsize);
-  z_stream    sin;
-  Bytef       out[LUAL_BUFFERSIZE];
-  int         rc;
+  z_stream sin;
+  Bytef    out[LUAL_BUFFERSIZE];
+  int      rc;
 
+  luaL_checktype(L,1,LUA_TFUNCTION);
   luaL_checktype(L,2,LUA_TFUNCTION);
   
   sin.zalloc    = Z_NULL;
@@ -53,15 +52,21 @@ static int mz_inflate(lua_State *L)
     return 2;
   }
   
-  sin.next_in  = (Byte *)blob;
-  sin.avail_in = bsize;
-
   do
-  {  
+  {
+    if (sin.avail_in == 0)
+    {  
+      lua_pushvalue(L,1);
+      lua_call(L,0,1);
+      sin.next_in = (Byte *)luaL_checklstring(L,-1,&sin.avail_in);
+      lua_pop(L,1);
+    }
+
     sin.next_out  = out;
     sin.avail_out = sizeof(out);
-  
+
     rc = inflate(&sin,Z_SYNC_FLUSH);
+    
     if ((rc == Z_OK) || (rc == Z_STREAM_END))
     {
       lua_pushvalue(L,2);
@@ -74,8 +79,8 @@ static int mz_inflate(lua_State *L)
       lua_pushstring(L,sin.msg);
       return 2;
     }
-  } while (rc != Z_STREAM_END); 
-  
+  } while (rc != Z_STREAM_END);  
+
   rc = inflateEnd(&sin);
   if (rc != Z_OK)
   {
