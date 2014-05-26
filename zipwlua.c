@@ -188,39 +188,31 @@ static int zipwlua_file(lua_State *L)
 {
   FILE           **pfp;
   long             pos;
-  zip_file__s     *file;
-  size_t           filelen;
+  zip_file__s      file;
   zip_lua_ext__s   ext;
   const char      *name;
   size_t           namelen;
-  uint8_t         *p;
-  
+
   pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
   pos = ftell(*pfp);
   luaL_checktype(L,2,LUA_TTABLE);
   zwlua_toluaext(L,2,&ext);
   lua_getfield(L,2,"module");
   name = luaL_checklstring(L,-1,&namelen);
+
+  zwlua_tofile(L,2,&file);
   
-  filelen = sizeof(zip_file__s) + namelen + sizeof(zip_lua_ext__s);
-  file    = malloc(filelen);
-  
-  if (file == NULL)
+  if (
+          (fwrite(&file,sizeof(zip_file__s),1,*pfp)   != 1)
+       || (fwrite(name,1,namelen,*pfp)                != namelen)
+       || (fwrite(&ext,sizeof(zip_lua_ext__s),1,*pfp) != 1)
+     )
   {
     lua_pushnil(L);
-    lua_pushinteger(L,ENOMEM);
+    lua_pushinteger(L,errno);
     return 2;
   }
-  
-  zwlua_tofile(L,2,file);
-  p = file->data;
-  memcpy(p,name,namelen); 
-  p += namelen;
-  memcpy(p,&ext,sizeof(ext));
-  fwrite(file,filelen,1,*pfp);
-  
-  free(file);
-  
+    
   lua_pushnumber(L,pos);
   lua_pushinteger(L,0);
   return 2;
@@ -232,61 +224,52 @@ static int zipwlua_dir(lua_State *L)
 {
   FILE           **pfp;
   long             pos;
-  zip_dir__s      *dir;
+  zip_dir__s       dir;
   zip_file__s      file;
   zip_lua_ext__s   ext;
-  size_t           dirlen;
   const char      *name;
   size_t           namelen;
-  uint8_t         *p;
-  
+
   pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
   pos = ftell(*pfp);
   luaL_checktype(L,2,LUA_TTABLE);
   zwlua_toluaext(L,2,&ext);
   lua_getfield(L,2,"module");
   name   = luaL_checklstring(L,-1,&namelen);
-  dirlen = sizeof(zip_dir__s) + namelen + sizeof(zip_lua_ext__s);
-  dir    = malloc(dirlen);
-  
-  if (dir == NULL)
-  {
-    free(dir);
-    lua_pushnil(L);
-    lua_pushinteger(L,ENOMEM);
-    return 2;
-  }
-  
+
   zwlua_tofile(L,2,&file);
   
-  dir->magic       = ZIP_MAGIC_CFILE;
-  dir->byversion   = file.byversion;
-  dir->forversion  = file.byversion;
-  dir->flags       = file.flags;
-  dir->compression = file.compression;
-  dir->modtime     = file.modtime;
-  dir->moddate     = file.moddate;
-  dir->crc         = file.crc;
-  dir->csize       = file.csize;
-  dir->usize       = file.usize;
-  dir->namelen     = file.namelen;
-  dir->extralen    = file.extralen;
-  dir->commentlen  = 0;
-  dir->diskstart   = 0;
-  dir->iattr       = ext.cpu == ZIPE_CPU_NONE ? ZIPIA_TEXT : 0;
-  dir->eattr       = 0;
+  dir.magic       = ZIP_MAGIC_CFILE;
+  dir.byversion   = file.byversion;
+  dir.forversion  = file.byversion;
+  dir.flags       = file.flags;
+  dir.compression = file.compression;
+  dir.modtime     = file.modtime;
+  dir.moddate     = file.moddate;
+  dir.crc         = file.crc;
+  dir.csize       = file.csize;
+  dir.usize       = file.usize;
+  dir.namelen     = file.namelen;
+  dir.extralen    = file.extralen;
+  dir.commentlen  = 0;
+  dir.diskstart   = 0;
+  dir.iattr       = ext.cpu == ZIPE_CPU_NONE ? ZIPIA_TEXT : 0;
+  dir.eattr       = 0;
   
   lua_getfield(L,2,"offset");
-  dir->offset = lua_tonumber(L,-1);
-  
-  p = dir->data;
-  memcpy(p,name,namelen);
-  p += namelen;
-  memcpy(p,&ext,sizeof(ext));
-  fwrite(dir,dirlen,1,*pfp);
-  
-  free(dir);
-  
+  dir.offset = lua_tonumber(L,-1);
+
+  if (
+          (fwrite(&dir,sizeof(zip_dir__s),1,*pfp)     != 1)
+       || (fwrite(name,1,namelen,*pfp)                != namelen)
+       || (fwrite(&ext,sizeof(zip_lua_ext__s),1,*pfp) != 1)
+     )
+  {
+    lua_pushnil(L);
+    lua_pushinteger(L,errno);
+    return 2;
+  }
+      
   lua_pushnumber(L,pos);
   lua_pushinteger(L,0);
   return 2;
