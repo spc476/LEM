@@ -233,7 +233,7 @@ static int zipwlua_dir(lua_State *L)
   FILE           **pfp;
   long             pos;
   zip_dir__s      *dir;
-  zip_file__s     *file;
+  zip_file__s      file;
   zip_lua_ext__s   ext;
   size_t           dirlen;
   const char      *name;
@@ -248,31 +248,29 @@ static int zipwlua_dir(lua_State *L)
   name   = luaL_checklstring(L,-1,&namelen);
   dirlen = sizeof(zip_dir__s) + namelen + sizeof(zip_lua_ext__s);
   dir    = malloc(dirlen);
-  file   = malloc(sizeof(zip_file__s));
   
-  if ((file == NULL) || (dir == NULL))
+  if (dir == NULL)
   {
-    free(file);
     free(dir);
     lua_pushnil(L);
     lua_pushinteger(L,ENOMEM);
     return 2;
   }
   
-  zwlua_tofile(L,2,file);
+  zwlua_tofile(L,2,&file);
   
   dir->magic       = ZIP_MAGIC_CFILE;
-  dir->byversion   = file->byversion;
-  dir->forversion  = file->byversion;
-  dir->flags       = file->flags;
-  dir->compression = file->compression;
-  dir->modtime     = file->modtime;
-  dir->moddate     = file->moddate;
-  dir->crc         = file->crc;
-  dir->csize       = file->csize;
-  dir->usize       = file->usize;
-  dir->namelen     = file->namelen;
-  dir->extralen    = file->extralen;
+  dir->byversion   = file.byversion;
+  dir->forversion  = file.byversion;
+  dir->flags       = file.flags;
+  dir->compression = file.compression;
+  dir->modtime     = file.modtime;
+  dir->moddate     = file.moddate;
+  dir->crc         = file.crc;
+  dir->csize       = file.csize;
+  dir->usize       = file.usize;
+  dir->namelen     = file.namelen;
+  dir->extralen    = file.extralen;
   dir->commentlen  = 0;
   dir->diskstart   = 0;
   dir->iattr       = ext.cpu == ZIPE_CPU_NONE ? ZIPIA_TEXT : 0;
@@ -287,7 +285,6 @@ static int zipwlua_dir(lua_State *L)
   memcpy(p,&ext,sizeof(ext));
   fwrite(dir,dirlen,1,*pfp);
   
-  free(file);
   free(dir);
   
   lua_pushnumber(L,pos);
@@ -299,27 +296,20 @@ static int zipwlua_dir(lua_State *L)
 
 static int zipwlua_eocd(lua_State *L)
 {
-  zip_eocd__s  *eocd;
+  zip_eocd__s   eocd;
   FILE        **pfp;
   
-  eocd = malloc(sizeof(zip_eocd__s));
-  if (eocd == NULL)
-  {
-    lua_pushinteger(L,ENOMEM);
-    return 1;
-  }
-  
   pfp                = luaL_checkudata(L,1,LUA_FILEHANDLE);
-  eocd->magic        = ZIP_MAGIC_EOCD;
-  eocd->disknum      = 0;
-  eocd->diskstart    = 0;
-  eocd->entries      = lua_tointeger(L,2);
-  eocd->totalentries = lua_tointeger(L,2);
-  eocd->size         = lua_tointeger(L,3);
-  eocd->offset       = lua_tointeger(L,4);
-  eocd->commentlen   = 0;
+  eocd.magic        = ZIP_MAGIC_EOCD;
+  eocd.disknum      = 0;
+  eocd.diskstart    = 0;
+  eocd.entries      = lua_tointeger(L,2);
+  eocd.totalentries = lua_tointeger(L,2);
+  eocd.size         = lua_tointeger(L,3);
+  eocd.offset       = lua_tointeger(L,4);
+  eocd.commentlen   = 0;
   
-  fwrite(eocd,sizeof(zip_eocd__s),1,*pfp);
+  fwrite(&eocd,sizeof(zip_eocd__s),1,*pfp);
   lua_pushinteger(L,0);
   return 1;
 }
