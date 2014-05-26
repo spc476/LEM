@@ -43,7 +43,6 @@ lem = io.open("sample.lem","wb")
 
 do
   local com   = mz.deflate(LEM)
-  local meta  = com
   local crc   = mz.crc(LEM)
   local err
 
@@ -55,18 +54,20 @@ do
 	luamin  = "5.1",
 	luamax  = "5.1",
 	crc     = crc,
-	csize   = #meta,
+	csize   = #com,
 	usize   = #LEM,
 	modtime = os.time(),
 	license = "none",
-	zip     = meta
   })
 
   list[1].offset,err = zipw.file(lem,list[1])
+
   if not list[1].offset then
     dump(errno[err],list[1])
     os.exit(1)
   end
+
+  lem:write(com)
 end
 
 for i = 2 , #list do
@@ -97,9 +98,8 @@ for i = 2 , #list do
   f:close()
   
   local com     = mz.deflate(d)
-  list[i].zip   = com
   list[i].crc   = mz.crc(d)
-  list[i].csize = #list[i].zip
+  list[i].csize = #com
   
   local err
   list[i].offset,err = zipw.file(lem,list[i])
@@ -108,8 +108,9 @@ for i = 2 , #list do
     dump(errno[err],list[i])
     os.exit(1)
   end
+
+  lem:write(com)
   
-  list[i].zip = nil
 end
 
 for _,entry in ipairs(list) do

@@ -193,8 +193,6 @@ static int zipwlua_file(lua_State *L)
   zip_lua_ext__s   ext;
   const char      *name;
   size_t           namelen;
-  const char      *data;
-  size_t           datasize;
   uint8_t         *p;
   
   pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
@@ -220,9 +218,6 @@ static int zipwlua_file(lua_State *L)
   p += namelen;
   memcpy(p,&ext,sizeof(ext));
   fwrite(file,filelen,1,*pfp);
-  lua_getfield(L,2,"zip");
-  data = lua_tolstring(L,-1,&datasize);
-  fwrite(data,1,datasize,*pfp);
   
   free(file);
   
