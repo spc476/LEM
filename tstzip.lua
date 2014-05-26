@@ -43,13 +43,11 @@ end
 
 -- ***********************************************************************
 
-local function read_data(entry,lem)
+local function read_data(entry,lem,sink)
   lem:seek('set',entry.offset)
   local file = zipr.file(lem)
   local com  = lem:read(file.csize)
-  local r = {}
-  mz.inflate(com,function(s) r[#r + 1] = s end)
-  return table.concat(r)
+  mz.inflate(com,sink)
 end
 
 -- ***********************************************************************
@@ -102,8 +100,12 @@ do
     store(dir)
   end
 
-  local thelem,err = loadstring(read_data(_LEM,lem))
+  local data = {}
+  read_data(_LEM,lem,function(s) data[#data + 1] = s end)
+  local thelem,err = load(function() return table.remove(data,1) end)
+  
   if not thelem then error("_LEM: %s",err) end
+  
   META = {}
   setfenv(thelem,META)
   thelem()
@@ -115,16 +117,15 @@ local function zip_loader(name)
   if not MODS[name] then return string.format("\n\tno file %s",name) end
 
   if MODS[name].os == 'none' then
-    local data = read_data(MODS[name],lem)
-    return load(function() local d = data data = nil return d end,name)
+    local data = {}
+    read_data(MODS[name],lem,function(s) data[#data + 1] = s end)
+    return load(function() return table.remove(data,1) end)
   end
-  
+    
   local lib  = os.tmpname()
   local f    = io.open(lib,"wb")
-  local data = read_data(MODS[name],lem)
-
-  f:write(data)
-  f:close()
+  
+  read_data(MODS[name],lem,function(s) f:write(s) end)
   
   local func,err = package.loadlib(lib,"luaopen_" .. name:gsub("%.","_"))
   os.remove(lib)
