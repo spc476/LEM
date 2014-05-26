@@ -47,7 +47,9 @@ local function read_data(entry,lem)
   lem:seek('set',entry.offset)
   local file = zipr.file(lem)
   local com  = lem:read(file.csize)
-  return mz.inflate(com,file.usize,-15)
+  local r = {}
+  mz.inflate(com,function(s) r[#r + 1] = s end)
+  return table.concat(r)
 end
 
 -- ***********************************************************************
