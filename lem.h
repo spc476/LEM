@@ -159,7 +159,7 @@ typedef struct
 
 typedef struct
 {
-  uint16_t id;		/* 0x4C45 */
+  uint16_t id;		/* 0x454C */
   uint16_t size;
   uint16_t luavmin;	/* Lua minimum version support */
   uint16_t luavmax;	/* Lua maximum version support */
