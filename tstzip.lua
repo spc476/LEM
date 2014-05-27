@@ -94,7 +94,9 @@ do
       dolist = FILES
     end
     
-    if entry.os == 'none' then
+    if dolist == FILES then
+      dolist[name] = entry
+    elseif entry.os == 'none' then
       add(dolist,name)
     else
       if entry.os == sys._SYSNAME and entry.cpu == sys._CPU then
@@ -173,3 +175,7 @@ print()
 unix = require "org.conman.unix"
 
 dump("USER",unix.users[os.getenv("USER")])
+
+for name,entry in pairs(FILES) do
+  dump(name,entry)
+end
