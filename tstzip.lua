@@ -54,26 +54,28 @@ end
 
 -- ***********************************************************************
 
-local VER  = 5 * 256 + 1
-local MODS = {}
+local VER     = 5 * 256 + 1
+local MODULES = {}
+local APP     = {}
+local FILES   = {}
 local META
 local lem
 
 do
   local _LEM
   local function store(entry)
-    local function add()
+    local function add(list,name)
       if VER < entry.luamin or VER > entry.luamax then
         return
       end
       
-      if MODS[entry.module] then
-        if entry.version < MODS[entry.module].version then
+      if list[name] then
+        if entry.version < list[name].version then
           return
         end
       end
       
-      MODS[entry.module] = entry
+      list[name] = entry
     end
     
     if entry.file == "_LEM" then
@@ -81,11 +83,22 @@ do
       return
     end
     
+    local list,name = entry.module:match("^_([^%/]+)%/(.*)")
+    local dolist
+    
+    if list == 'MODULES' then
+      dolist = MODULES
+    elseif list == 'APP' then
+      dolist = APP
+    else
+      dolist = FILES
+    end
+    
     if entry.os == 'none' then
-      add()
+      add(dolist,name)
     else
       if entry.os == sys._SYSNAME and entry.cpu == sys._CPU then
-        add()
+        add(dolist,name)
       end      
     end
   end
@@ -116,11 +129,11 @@ end
 -- ***********************************************************************
 
 local function zip_loader(name)
-  if not MODS[name] then return string.format("\n\tno file %s",name) end
+  if not MODULES[name] then return string.format("\n\tno file %s",name) end
 
-  if MODS[name].os == 'none' then
+  if MODULES[name].os == 'none' then
     local data = {}
-    read_data(MODS[name],lem,function(s) data[#data + 1] = s end)
+    read_data(MODULES[name],lem,function(s) data[#data + 1] = s end)
     local func,err = load(function() return table.remove(data,1) end,name)
     if not func then error("%s: %s",name,err) end
     return func
@@ -129,7 +142,7 @@ local function zip_loader(name)
   local lib  = os.tmpname()
   local f    = io.open(lib,"wb")
   
-  read_data(MODS[name],lem,function(s) f:write(s) end)
+  read_data(MODULES[name],lem,function(s) f:write(s) end)
   
   local func,err = package.loadlib(lib,"luaopen_" .. name:gsub("%.","_"))
   os.remove(lib)

@@ -97,7 +97,7 @@ for i = 2 , #list do
   list[i].modtime = info.st_mtime
   
   if list[i].module then
-    list[i].name = list[i].module
+    list[i].name = "_MODULES/" .. list[i].module
     if not list[i].luamin then
       list[i].luamin  = "5.1"
       list[i].luamax  = "5.1"
