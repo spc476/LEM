@@ -58,55 +58,76 @@ static uint16_t zwlua_toversion(lua_State *L,int idx)
 
 static uint16_t zwlua_toos(lua_State *L,int idx)
 {
-  const char *os = luaL_checkstring(L,idx);
+  if (lua_isstring(L,idx))
+  {
+    const char *os = luaL_checkstring(L,idx);
   
-  if (strcmp(os,"Linux") == 0)
-    return ZIPE_OS_LINUX;
-  else if (strcmp(os,"SunOS") == 0)
-    return ZIPE_OS_SOLARIS;
-  else if (strcmp(os,"none") == 0)
-    return ZIPE_OS_NONE;
+    if (strcmp(os,"Linux") == 0)
+      return ZIPE_OS_LINUX;
+    else if (strcmp(os,"SunOS") == 0)
+      return ZIPE_OS_SOLARIS;
+    else if (strcmp(os,"none") == 0)
+      return ZIPE_OS_NONE;
+    else
+      return luaL_error(L,"bad operating system");
+  }
+  else if (lua_isnumber(L,idx))
+    return lua_tointeger(L,idx);
   else
-    return luaL_error(L,"bad operating system");
+    return 0;
 }
 
 /***********************************************************************/
 
 static uint16_t zwlua_tocpu(lua_State *L,int idx,uint16_t os)
 {
-  const char *cpu = luaL_checkstring(L,idx);
-  
-  if (strcmp(cpu,"sparcv9") == 0)
-    return ZIPE_CPU_SPARC64;
-  else if (strcmp(cpu,"x86") == 0)
-    return ZIPE_CPU_x86;
-  else if (strcmp(cpu,"none") == 0)
-    return ZIPE_CPU_NONE;
-  else if (strcmp(cpu,"_LEM") == 0) 
+  if (lua_isstring(L,idx))
   {
-    if (os == ZIPE_OS_NONE)
-      return ZIPE_META_LEM;
+    const char *cpu = luaL_checkstring(L,idx);
+  
+    if (strcmp(cpu,"sparcv9") == 0)
+      return ZIPE_CPU_SPARC64;
+    else if (strcmp(cpu,"x86") == 0)
+      return ZIPE_CPU_x86;
+    else if (strcmp(cpu,"none") == 0)
+      return ZIPE_CPU_NONE;
+    else if (strcmp(cpu,"_LEM") == 0) 
+    {
+      if (os == ZIPE_OS_NONE)
+        return ZIPE_META_LEM;
+      else
+        return luaL_error(L,"bad CPU");
+    }
     else
       return luaL_error(L,"bad CPU");
   }
+  else if (lua_isnumber(L,idx))
+    return lua_tointeger(L,idx);
   else
-    return luaL_error(L,"bad CPU");
+    return 0;
 }
 
 /***********************************************************************/
 
 static uint16_t zwlua_tolicense(lua_State *L,int idx)
 {
-  const char *lic = luaL_checkstring(L,idx);
+  if (lua_isstring(L,idx))
+  {
+    const char *lic = luaL_checkstring(L,idx);
   
-  if (strcmp(lic,"LGPL3+") == 0)
-    return ZIPE_LIC_LGPL3;
-  else if (strcmp(lic,"MIT") == 0)
-    return ZIPE_LIC_MIT;
-  else if (strcmp(lic,"none") == 0)
-    return ZIPE_LIC_NONE;
+    if (strcmp(lic,"LGPL3+") == 0)
+      return ZIPE_LIC_LGPL3;
+    else if (strcmp(lic,"MIT") == 0)
+      return ZIPE_LIC_MIT;
+    else if (strcmp(lic,"none") == 0)
+      return ZIPE_LIC_NONE;
+    else
+      return ZIPE_LIC_UNKNOWN;
+  }
+  else if (lua_isnumber(L,idx))
+    return lua_tointeger(L,idx);
   else
-    return ZIPE_LIC_UNKNOWN;
+    return 0;
 }
 
 /***********************************************************************/
@@ -176,7 +197,7 @@ static void zwlua_tofile(lua_State *L,int idx,zip_file__s *file,bool luaext)
   file->csize = lua_tointeger(L,-1);
   lua_getfield(L,idx,"usize");
   file->usize = lua_tointeger(L,-1);
-  lua_getfield(L,idx,"module");
+  lua_getfield(L,idx,"name");
   file->namelen  = lua_objlen(L,-1);
   file->extralen = luaext ? sizeof(zip_lua_ext__s) : 0 ;
   file->flags    = 0;
@@ -198,7 +219,7 @@ static int zipwlua_file(lua_State *L)
   pos = ftell(*pfp);
   luaL_checktype(L,2,LUA_TTABLE);
   zwlua_toluaext(L,2,&ext);
-  lua_getfield(L,2,"module");
+  lua_getfield(L,2,"name");
   name = luaL_checkstring(L,-1);
 
   zwlua_tofile(L,2,&file,lua_toboolean(L,3));
@@ -208,12 +229,21 @@ static int zipwlua_file(lua_State *L)
   if (
           (fwrite(&file,sizeof(zip_file__s),1,*pfp) != 1)
        || (fwrite(name,1,file.namelen,*pfp)         != file.namelen)
-       || (fwrite(&ext,file.extralen,1,*pfp)        != 1)
      )
   {
     lua_pushnil(L);
     lua_pushinteger(L,errno);
     return 2;
+  }
+  
+  if (file.extralen > 0)
+  {
+    if (fwrite(&ext,file.extralen,1,*pfp) != 1)
+    {
+      lua_pushnil(L);
+      lua_pushinteger(L,errno);
+      return 2;
+    }
   }
     
   lua_pushnumber(L,pos);
@@ -237,7 +267,7 @@ static int zipwlua_dir(lua_State *L)
   pos = ftell(*pfp);
   luaL_checktype(L,2,LUA_TTABLE);
   zwlua_toluaext(L,2,&ext);
-  lua_getfield(L,2,"module");
+  lua_getfield(L,2,"name");
   name   = luaL_checkstring(L,-1);
 
   zwlua_tofile(L,2,&file,lua_toboolean(L,3));
@@ -267,12 +297,21 @@ static int zipwlua_dir(lua_State *L)
   if (
           (fwrite(&dir,sizeof(zip_dir__s),1,*pfp) != 1)
        || (fwrite(name,1,dir.namelen,*pfp)        != dir.namelen)
-       || (fwrite(&ext,dir.extralen,1,*pfp)       != 1)
      )
   {
     lua_pushnil(L);
     lua_pushinteger(L,errno);
     return 2;
+  }
+  
+  if (dir.extralen > 0)
+  {
+    if (fwrite(&ext,dir.extralen,1,*pfp) != 1)
+    {
+      lua_pushnil(L);
+      lua_pushinteger(L,errno);
+      return 2;
+    }
   }
       
   lua_pushnumber(L,pos);

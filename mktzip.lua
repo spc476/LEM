@@ -63,6 +63,7 @@ do
 
   table.insert(list,1, {
 	module  = "_LEM",
+	name    = "_LEM",
 	os      = "none",
 	cpu     = "_LEM",
 	version = "0.1",
@@ -95,17 +96,22 @@ for i = 2 , #list do
   list[i].usize   = info.st_size
   list[i].modtime = info.st_mtime
   
-  if not list[i].luamin then
-    list[i].luamin  = "5.1"
-    list[i].luamax  = "5.1"
-  end
+  if list[i].module then
+    list[i].name = list[i].module
+    if not list[i].luamin then
+      list[i].luamin  = "5.1"
+      list[i].luamax  = "5.1"
+    end
   
-  if not list[i].version then
-    list[i].version = "0.0"
-  end  
+    if not list[i].version then
+      list[i].version = "0.0"
+    end  
 
-  if not list[i].license then
-    list[i].license = "LGPL3+"
+    if not list[i].license then
+      list[i].license = "LGPL3+"
+    end
+  else
+    list[i].name = "_FILES/" .. list[i].file
   end
   
   local f = io.open(list[i].file,"rb")
@@ -130,9 +136,8 @@ for i = 2 , #list do
   list[i].csize = #com
   
   local err
-  list[i].offset,err = zipw.file(lem,list[i],true)
+  list[i].offset,err = zipw.file(lem,list[i],list[i].module)
   if not list[i].offset then
-    list[i].zip = nil
     dump(errno[err],list[i])
     os.exit(1)
   end
@@ -143,7 +148,7 @@ end
 
 for _,entry in ipairs(list) do
   local err
-  entry.coffset,err = zipw.dir(lem,entry,true)
+  entry.coffset,err = zipw.dir(lem,entry,entry.module)
   if not entry.coffset then
     dump(errno[err],entry)
     os.exit(2)
