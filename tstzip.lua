@@ -174,6 +174,9 @@ print()
 
 unix = require "org.conman.unix"
 
+lpeg = require "lpeg"
+print("LPeg",lpeg.version())
+
 dump("USER",unix.users[os.getenv("USER")])
 
 for name,entry in pairs(FILES) do
