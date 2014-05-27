@@ -136,7 +136,7 @@ for i = 2 , #list do
   list[i].csize = #com
   
   local err
-  list[i].offset,err = zipw.file(lem,list[i],list[i].module)
+  list[i].offset,err = zipw.file(lem,list[i],list[i].module ~= nil)
   if not list[i].offset then
     dump(errno[err],list[i])
     os.exit(1)
@@ -148,7 +148,7 @@ end
 
 for _,entry in ipairs(list) do
   local err
-  entry.coffset,err = zipw.dir(lem,entry,entry.module)
+  entry.coffset,err = zipw.dir(lem,entry,entry.module ~= nil)
   if not entry.coffset then
     dump(errno[err],entry)
     os.exit(2)
