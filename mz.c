@@ -209,10 +209,15 @@ static int mz_deflate(lua_State *L)
 static int mz_crc32(lua_State *L)
 {
   unsigned long  initcrc = luaL_checknumber(L,1);
-  size_t         size;
-  const char    *data    = luaL_checklstring(L,2,&size);
   
-  lua_pushnumber(L,crc32(initcrc,(Byte *)data,size));
+  if (lua_isstring(L,2))
+  {
+    size_t      size;
+    const char *data    = lua_tolstring(L,2,&size);
+    initcrc = crc32(initcrc,(Byte *)data,size);
+  }
+  
+  lua_pushnumber(L,initcrc);
   return 1;
 }
 
