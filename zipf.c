@@ -305,14 +305,7 @@ int main(int argc,char *argv[])
       for (size_t i = 0 ; zipfile.dir[i] != NULL ; i++)
       {
         zip_lua_ext__s ext;
-        char           byos  [64];
-        char           byver [64];
-        char           foros [64];
-        char           forver[64];
-        
-        zipfile_version(zipfile.dir[i]->byversion,byos,sizeof(byos),byver,sizeof(byver));
-        zipfile_version(zipfile.dir[i]->forversion,foros,sizeof(foros),forver,sizeof(forver));
-        
+
         if (zipfile.dir[i]->extralen > 0)
         {
           memcpy(
@@ -399,28 +392,8 @@ int main(int argc,char *argv[])
           }
         }
         else
-        {        
-          printf(
-        	"name:        %.*s\n"
-        	"namelen:     %10lu\n"
-        	"size:        %10lu\n"
-        	"flags:       %04X\n"
-        	"compression: %04X\n"
-        	"iattr:       %04X\n"
-        	"eattr:       %08X\n"
-        	"byversion:   %s %s\n"
-        	"forversion:  %s %s\n"
-        	"\n",
-        	(int)zipfile.dir[i]->namelen,zipfile.dir[i]->data,
-        	(unsigned long)zipfile.dir[i]->namelen,
-        	(unsigned long)zipfile.dir[i]->usize,
-        	zipfile.dir[i]->flags,
-        	zipfile.dir[i]->compression,
-        	zipfile.dir[i]->iattr,
-        	zipfile.dir[i]->eattr,
-        	byos,byver,
-        	foros,forver
-	  );
+        {
+          printf("%52s%.*s\n","",(int)zipfile.dir[i]->namelen,zipfile.dir[i]->data);                
         }
       }
             
