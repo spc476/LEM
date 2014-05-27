@@ -119,6 +119,8 @@ static uint16_t zwlua_tolicense(lua_State *L,int idx)
       return ZIPE_LIC_LGPL3;
     else if (strcmp(lic,"MIT") == 0)
       return ZIPE_LIC_MIT;
+    else if (strcmp(lic,"MIT/X11") == 0)
+      return ZIPE_LIC_MIT;
     else if (strcmp(lic,"none") == 0)
       return ZIPE_LIC_NONE;
     else
