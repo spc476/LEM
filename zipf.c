@@ -393,7 +393,7 @@ int main(int argc,char *argv[])
         }
         else
         {
-          printf("%52s%.*s\n","",(int)zipfile.dir[i]->namelen,zipfile.dir[i]->data);                
+          printf("%53s%.*s\n","",(int)zipfile.dir[i]->namelen,zipfile.dir[i]->data);                
         }
       }
             
