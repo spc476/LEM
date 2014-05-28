@@ -17,6 +17,29 @@
 *
 * Comments, questions and criticisms can be sent to: sean@conman.org
 *
+* --------------------------------------------------------------------
+*
+* The Lua interface to zlib.
+*
+* rc,msg = inflate(input,outout)
+*
+*	This function will inflate a compressed DEFLATE data from a ZIP
+*	file.  The input parameter is a function that supplies data, and
+*	the output parameter is a function that does something with the
+*	deflated data.  It returns 0 on success, or not 0 and a message
+*	when an error occurs.
+*
+* rc,msg = deflate([level],input,outout)
+*
+*	This function will deflate data.  The level parameter (optional)
+*	is the compression level desired.  The other two paramters work
+*	the same way as the parameters to inflate().  
+*
+* crc = crc32(initialrcr[,data])
+*
+*	Calculates and returns the updated 32-bit CRC over the data.  If no
+*	data is given, the passed in CRC is returned.
+*
 *************************************************************************/
 
 #include <stdlib.h>

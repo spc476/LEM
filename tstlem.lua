@@ -18,6 +18,10 @@
 --
 -- Comments, questions and criticisms can be sent to: sean@conman.org
 --
+-- -----------------------------------------------------------------
+--
+-- Test the excution of LuaRocks from a LEM file.
+--
 -- ********************************************************************
 
 local dump  = require "org.conman.table".dump

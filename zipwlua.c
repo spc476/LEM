@@ -17,6 +17,41 @@
 *
 * Comments, questions and criticisms can be sent to: sean@conman.org
 *
+* ----------------------------------------------------------------------
+*
+* The ZIP file writer.
+*
+* offset,err = zipw.file(lem,fileinfo[,extra])
+*
+*	lem is an open LEM file (result from io.open()) for writing.  This
+*	functions writes the fileinfo and if the extra flag is true, the Lua
+*	extention data, to the LEM file.  This will return the offset of the
+*	file entry in the LEM file.
+*
+*	This does NOT write the compressed data.  That is done immedately
+*	after a call to this function.
+*
+*	The only restriction is that this data (and the compressed data)
+*	cannot be the last thing written to the file.
+*
+* offset,err = zipw.dir(lem,dirinfo[,extra])
+*
+*	lem is an open LEM file or writing.  This function writes the dirinfo
+*	and the Lua extended data if extra is true.  This function only
+*	writes one directory entry, and returns the offset of the directory
+*	information in the LEM file.
+*
+*	Two restrictions:  all dir entries need to be together.  And the
+*	directory entries cannot be the last thing written to the file.
+*
+* zipr.eocd(lem,#entries,dirsize,diroffset)
+*
+*	lem is an open LEM file for writing.  dirsize is the size (in bytes)
+*	of the central directory, and the diroffset is the offset in the
+*	LEM file of the first directory entry.
+*
+*	This MUST be the last thing written to the LEM file.
+*
 *************************************************************************/
 
 #include <stdio.h>

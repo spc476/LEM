@@ -18,6 +18,10 @@
 --
 -- Comments, questions and criticisms can be sent to: sean@conman.org
 --
+-- -------------------------------------------------------------------
+--
+-- Pack LuaRocks into a LEM file.
+--
 -- ********************************************************************
 
 local errno = require "org.conman.errno"

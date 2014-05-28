@@ -18,6 +18,10 @@
 --
 -- Comments, questions and criticisms can be sent to: sean@conman.org
 --
+-- ------------------------------------------------------------------
+--
+-- Loads and tests a few modules from the sample.lem file.
+--
 -- ********************************************************************
 
 local sys   = require "org.conman.sys"

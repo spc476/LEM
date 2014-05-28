@@ -17,6 +17,10 @@
 *
 * Comments, questions and criticisms can be sent to: sean@conman.org
 *
+* ----------------------------------------------------------------------
+*
+* Prints the contents of a LEM file, including the Lua extention blocks.
+*
 *************************************************************************/
 
 #include <stdio.h>

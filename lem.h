@@ -17,6 +17,10 @@
 *
 * Comments, questions and criticisms can be sent to: sean@conman.org
 *
+* ---------------------------------------------------------------------
+*
+* The Structure of a LEM (ZIP) file.
+*
 *************************************************************************/
 
 #ifndef LEM_H

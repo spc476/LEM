@@ -38,6 +38,8 @@
 -- The following list is an example.  It is expected for you to modify
 -- the list as it suits your needs.
 --
+-- This file is used by the mktzip.lua script to generate the sample.lem
+-- file.
 -- *************************************************************************
 
 list = 

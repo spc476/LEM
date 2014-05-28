@@ -18,6 +18,10 @@
 --
 -- Comments, questions and criticisms can be sent to: sean@conman.org
 --
+-- -------------------------------------------------------------------
+--
+-- Makes a sample LEM file.  Yes, this is ugly code.
+--
 -- ********************************************************************
 
 local dump  = require "org.conman.table".dump

@@ -17,6 +17,34 @@
 *
 * Comments, questions and criticisms can be sent to: sean@conman.org
 *
+* ----------------------------------------------------------------------
+*
+* The ZIP file reader.
+*
+* info,err = zipr.file(lem)
+*
+*	lem is an open LEM file (result from io.open()).  It expects to be
+*	positioned properly in the file.  This returns the zip file data,
+*	plus the Lua extended data (if available).
+*
+*	The location of the file is in the corresponding directory entry.
+*
+*	This function does NOT read the compressed data that follows the
+*	file information.
+*
+* info,err = zipr.dir(lem)
+*
+*	lem is an open LEM file.  This expects to be positioned properly in
+*	the file.  This returns a zip directory entry, plus any Lua extended
+*	data (if available).
+*
+*	The location of the first record is in the eocd record.
+*
+* info,err = zipr.eocd(lem)
+*
+*	lem is an open LEM file.  This returns the End of Central Directory
+*	informtation.  The file does NOT have to be positioned properly.
+*
 *************************************************************************/
 
 #include <stdio.h>
