@@ -31,6 +31,7 @@
 #define ZIP_MAGIC_EOCD	0x06054B50
 #define ZIP_MAGIC_CFILE	0x02014B50
 #define ZIP_MAGIC_FILE  0x04034B50
+#define ZIP_MAGIC_DATA	0x08074b50
 
 #define ZIPE_META_LEM	65535u
 
@@ -158,7 +159,19 @@ typedef struct
   uint8_t  data[];
 } __attribute__((packed)) zip_file__s;
 
-#define ZIPIA_TEXT	(1 << 0)
+typedef struct
+{
+  uint32_t magic;	/* 0x08074b50 */
+  uint32_t crc;
+  uint32_t csize;
+  uint32_t usize;
+} __attribute__((packed)) zip_data__s;
+
+#define ZIPF_DATA	(1 <<  3)
+#define ZIPF_UTF8	(1 << 11)
+
+#define ZIPIA_TEXT	(1 <<  0)
+
 #define ZIP_EXT_LUA	0x454C
 
 typedef struct
@@ -172,11 +185,5 @@ typedef struct
   uint16_t version;	/* Version */
   uint16_t license;	/* License */
 } __attribute__((packed)) zip_lua_ext__s;
-
-typedef struct
-{
-  uint16_t modtime;
-  uint16_t moddate;
-} modtime__s;
 
 #endif

@@ -21,34 +21,11 @@
 *
 * The ZIP file reader.
 *
-* info,err = zipr.file(lem)
-*
-*	lem is an open LEM file (result from io.open()).  It expects to be
-*	positioned properly in the file.  This returns the zip file data,
-*	plus the Lua extended data (if available).
-*
-*	The location of the file is in the corresponding directory entry.
-*
-*	This function does NOT read the compressed data that follows the
-*	file information.
-*
-* info,err = zipr.dir(lem)
-*
-*	lem is an open LEM file.  This expects to be positioned properly in
-*	the file.  This returns a zip directory entry, plus any Lua extended
-*	data (if available).
-*
-*	The location of the first record is in the eocd record.
-*
-* info,err = zipr.eocd(lem)
-*
-*	lem is an open LEM file.  This returns the End of Central Directory
-*	informtation.  The file does NOT have to be positioned properly.
-*
 *************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
@@ -64,6 +41,44 @@
 
 /***********************************************************************/
 
+static bool zwlib_fread(
+        lua_State *L,
+        void      *data,
+        size_t     size,
+        size_t     nmemb,
+        FILE      *fp
+)
+{
+  if (nmemb > 0)
+  {
+    if (fread(data,size,nmemb,fp) == nmemb)
+      return true;
+    lua_pushnil(L);
+    lua_pushinteger(L,errno);
+  }
+  
+  return false;
+}
+
+/***********************************************************************/
+
+static void zwlib_readstring(lua_State *L,FILE *fp,size_t len)
+{
+  if (len > 0)
+  {
+    luaL_Buffer buf;
+  
+    luaL_buffinit(L,&buf);
+    while(len--)
+      luaL_addchar(&buf,fgetc(fp));
+    luaL_pushresult(&buf);
+  }
+  else
+    lua_pushnil(L);
+}
+
+/***********************************************************************/
+        
 static void zwlua_pushos(lua_State *L,uint16_t os)
 {
   switch(os)
@@ -116,25 +131,45 @@ static void zwlua_pushlicense(lua_State *L,uint16_t license)
 
 /***********************************************************************/
 
-static void zwlua_pushext(lua_State *L,int idx,zip_lua_ext__s *ext)
+static bool zwlua_pushext(lua_State *L,FILE *fp,size_t len)
 {
-  idx = abs_index(L,idx);
-  
-  lua_pushinteger(L,ext->luavmin);
-  lua_setfield(L,idx,"luamin");
-  lua_pushinteger(L,ext->luavmax);
-  lua_setfield(L,idx,"luamax");
-  lua_pushinteger(L,ext->version);
-  lua_setfield(L,idx,"version");
-  zwlua_pushos(L,ext->os);
-  lua_setfield(L,idx,"os");
-  zwlua_pushcpu(L,ext->cpu,ext->os);
-  if (ext->os == ZIPE_OS_NONE)
-    lua_setfield(L,idx,"file");
+  if (len == 0)
+    lua_pushnil(L);
   else
-    lua_setfield(L,idx,"cpu");
-  zwlua_pushlicense(L,ext->license);
-  lua_setfield(L,idx,"license");
+  {
+    if (len == sizeof(zip_lua_ext__s))
+    {
+      zip_lua_ext__s ext;
+      
+      if (!zwlib_fread(L,&ext,sizeof(zip_lua_ext__s),1,fp))
+        return false;
+      
+      /* FIXME: adjust byte order on big endian systems */
+      
+      if (ext.id == ZIP_EXT_LUA)
+      {
+        lua_createtable(L,0,6);
+  
+        lua_pushinteger(L,ext.luavmin);
+        lua_setfield(L,-2,"luamin");
+        lua_pushinteger(L,ext.luavmax);
+        lua_setfield(L,-2,"luamax");
+        lua_pushinteger(L,ext.version);
+        lua_setfield(L,-2,"version");
+        zwlua_pushos(L,ext.os);
+        lua_setfield(L,-2,"os");
+        zwlua_pushcpu(L,ext.cpu,ext.os);
+        lua_setfield(L,-2,"cpu");
+        zwlua_pushlicense(L,ext.license);
+        lua_setfield(L,-2,"license");
+      }
+      else
+        zwlib_readstring(L,fp,len);
+    }
+    else    
+      zwlib_readstring(L,fp,len);
+  }
+  return true;
 }
 
 /***********************************************************************/
@@ -152,26 +187,88 @@ static void zwlua_pushmodtime(lua_State *L,uint16_t modtime,uint16_t moddate)
   lua_pushnumber(L,mktime(&stm));
 }
 
-/***********************************************************************/
- 
+/***********************************************************************
+*
+*	data,err = zipr.data(lem)
+*
+*	lem  - file open for binary reading
+*	data - data descriptor 
+*		.crc   - crc of normal data.
+*		.csize - compressed size of file
+*		.usize - normal size of file
+*
+* This function reads the data descriptor, which only exists if the data
+* flag of a file is set.  If an error, returns nil and the error.
+*
+***************************************************************************/
+
+static int ziprlua_data(lua_State *L)
+{
+  zip_data__s   data;
+  FILE        **pfp;
+  
+  pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
+  if (!zwlib_fread(L,&data,sizeof(zip_data__s),1,*pfp))
+    return 2;
+  
+  if (data.magic != ZIP_MAGIC_DATA)
+  {
+    lua_pushnil(L);
+    lua_pushinteger(L,EINVAL);
+    return 2;
+  }
+  
+  lua_createtable(L,0,3);
+  lua_pushnumber(L,data.crc);
+  lua_setfield(L,-2,"crc");
+  lua_pushnumber(L,data.csize);
+  lua_setfield(L,-2,"csize");
+  lua_pushnumber(L,data.usize);
+  lua_setfield(L,-2,"usize");
+  
+  lua_pushinteger(L,0);
+  return 2;
+}
+
+/***********************************************************************
+*
+*	file,err = zipr.file(lem)
+*
+*	lem  - file open for binary reading
+*	file - local file header
+*		.modtime - modification time of file
+*		.crc     - crc of file
+*		.csize   - compressed size of file
+*		.usize   - normal size of file
+*		.name    - name of file
+*		.data    - true if data descriptor for file is present
+*		.utf8    - name/comment is in UTF-8
+*		.extra   - extra data, raw data unless if Lua extension:
+*			.luamin  - minimum Lua version supported
+*			.luamax  - maximum Lua version supported
+*			.version - version of file
+*			.os      - OS required 
+*			.cpu     - CPU required
+*			.license - license of file
+*
+* This function reads a local file header.  If an error, returns nil and the
+* error.
+*
+***************************************************************************/
+
 static int ziprlua_file(lua_State *L)
 {
   zip_file__s   file;
   FILE        **pfp;
-  luaL_Buffer   buf;
   
   pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
-  if (fread(&file,sizeof(zip_file__s),1,*pfp) != 1)
-  {
-    lua_pushnil(L);
-    lua_pushinteger(L,errno);
+  if (!zwlib_fread(L,&file,sizeof(zip_file__s),1,*pfp))
     return 2;
-  }
   
   /* FIXME: adjust byte order on big endian systems */
 
   if (
-       (file.magic != ZIP_MAGIC_FILE)
+          (file.magic       != ZIP_MAGIC_FILE)
        || (file.compression !=  8)
        || (file.byversion   != 20)
      )
@@ -181,14 +278,8 @@ static int ziprlua_file(lua_State *L)
     return 2;
   }
   
-  lua_createtable(L,0,0);
-  
-  luaL_buffinit(L,&buf);
-  while(file.namelen--)
-    luaL_addchar(&buf,fgetc(*pfp));
-  luaL_pushresult(&buf);
-  lua_setfield(L,-2,"module");
-  
+  lua_createtable(L,0,8);
+
   zwlua_pushmodtime(L,file.modtime,file.moddate);
   lua_setfield(L,-2,"modtime");
   lua_pushnumber(L,file.crc);
@@ -197,56 +288,59 @@ static int ziprlua_file(lua_State *L)
   lua_setfield(L,-2,"csize");
   lua_pushnumber(L,file.usize);
   lua_setfield(L,-2,"usize");
+  lua_pushboolean(L,(file.flags & ZIPF_DATA) == ZIPF_DATA);
+  lua_setfield(L,-2,"data");
+  lua_pushboolean(L,(file.flags & ZIPF_UTF8) == ZIPF_UTF8);
+  lua_setfield(L,-2,"utf8");
   
-  if (file.extralen == sizeof(zip_lua_ext__s))
-  {
-    zip_lua_ext__s ext;
-    
-    if (fread(&ext,sizeof(zip_lua_ext__s),1,*pfp) != 1)
-    {
-      lua_pushnil(L);
-      lua_pushinteger(L,errno);
-      return 2;
-    }
-    
-    /* FIXME: adjust byte order on big endian systems */
-    
-    if (
-         (ext.id != ZIP_EXT_LUA)
-         || (ext.size != sizeof(zip_lua_ext__s) - (sizeof(uint16_t) * 2))
-      )
-    {
-      lua_pushnil(L);
-      lua_pushinteger(L,EINVAL);
-      return 2;
-    }
-    
-    zwlua_pushext(L,-1,&ext);
-  }
-  else if (file.extralen > 0)
-    while(file.extralen--)
-      fgetc(*pfp);
+  zwlib_readstring(L,*pfp,file.namelen);
+  lua_setfield(L,-2,"name");
+  if (!zwlua_pushext(L,*pfp,file.extralen))
+    return 2;
+  lua_setfield(L,-2,"extra");
   
   lua_pushinteger(L,0);
-  return 2;
+  return 2;  
 }
 
-/***********************************************************************/
+/***********************************************************************
+*
+*	dir,err = zipr.dir(lem)
+*
+*	lem - file open for binary reading
+*	dir - table of results:
+*		.modtime - modification time of file
+*		.crc     - crc of file
+*		.csize   - compressed size of file
+*		.usize   - normal size of file
+*		.name    - name of file
+*		.comment - file comment
+*		.text    - true if file is text
+*		.data    - true if data descriptor for file is present
+*		.utf8    - name/comment is in UTF-8
+*		.offset  - offset of local file header
+*		.extra   - extra data, raw data unless if Lua extension:
+*			.luamin  - minimum Lua version supported
+*			.luamax  - maximum Lua version supported
+*			.version - version of file
+*			.os      - OS required 
+*			.cpu     - CPU required
+*			.license - license of file
+*
+* This function reads a directory entry.  If an error, returns nil and the
+* error.
+*
+***************************************************************************/
 
 static int ziprlua_dir(lua_State *L)
 {
   zip_dir__s    dir;
   FILE        **pfp;
-  luaL_Buffer   buf;
   
   pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
-  if (fread(&dir,sizeof(zip_dir__s),1,*pfp) != 1)
-  {
-    lua_pushnil(L);
-    lua_pushinteger(L,errno);
+  if (!zwlib_fread(L,&dir,sizeof(zip_dir__s),1,*pfp))
     return 2;
-  }
-
+  
   /* FIXME: adjust byte order on big endian systems */
   
   if (
@@ -262,12 +356,6 @@ static int ziprlua_dir(lua_State *L)
   
   lua_createtable(L,0,11);
   
-  luaL_buffinit(L,&buf);
-  while(dir.namelen--)
-    luaL_addchar(&buf,fgetc(*pfp));
-  luaL_pushresult(&buf);
-  lua_setfield(L,-2,"module");
-  
   zwlua_pushmodtime(L,dir.modtime,dir.moddate);
   lua_setfield(L,-2,"modtime");
   lua_pushnumber(L,dir.crc);
@@ -276,45 +364,41 @@ static int ziprlua_dir(lua_State *L)
   lua_setfield(L,-2,"csize");
   lua_pushnumber(L,dir.usize);
   lua_setfield(L,-2,"usize");
-  lua_pushboolean(L,(dir.iattr & ZIPIA_TEXT) == ZIPIA_TEXT);
-  lua_setfield(L,-2,"text");
   lua_pushnumber(L,dir.offset);
   lua_setfield(L,-2,"offset");
+  lua_pushboolean(L,(dir.flags & ZIPF_DATA) == ZIPF_DATA);
+  lua_setfield(L,-2,"data");
+  lua_pushboolean(L,(dir.flags & ZIPF_UTF8) == ZIPF_UTF8);
+  lua_setfield(L,-2,"utf8");
+  lua_pushboolean(L,(dir.iattr & ZIPIA_TEXT) == ZIPIA_TEXT);
+  lua_setfield(L,-2,"text");
   
-  if (dir.extralen == sizeof(zip_lua_ext__s))
-  {
-    zip_lua_ext__s ext;
-    
-    if (fread(&ext,sizeof(zip_lua_ext__s),1,*pfp) != 1)
-    {
-      lua_pushnil(L);
-      lua_pushinteger(L,errno);
-      return 2;
-    }
-    
-    /* FIXME: adjust byte order on big endian systems */
-    
-    if (
-            (ext.id   != ZIP_EXT_LUA)
-         || (ext.size != sizeof(zip_lua_ext__s) - (sizeof(uint16_t) * 2))
-       )
-    {
-      lua_pushnil(L);
-      lua_pushinteger(L,EINVAL);
-      return 2;
-    }
-    
-    zwlua_pushext(L,-1,&ext);
-  }
-  else if (dir.extralen > 0)
-    while(dir.extralen--)
-      fgetc(*pfp);
-
+  zwlib_readstring(L,*pfp,dir.namelen);
+  lua_setfield(L,-2,"name");
+  if (!zwlua_pushext(L,*pfp,dir.extralen))
+    return 2;
+  lua_setfield(L,-2,"extra");
+  zwlib_readstring(L,*pfp,dir.commentlen);
+  lua_setfield(L,-2,"comment");
+  
   lua_pushinteger(L,0);
   return 2;
 }
 
-/***********************************************************************/
+/***********************************************************************
+*
+*	eocd,err = zipr.eocd(lem)
+*
+*	lem  - file open for binary reading
+*	eocd - table of results:
+*		.entries - #directory entries
+*		.size    - #bytes in directory
+*		.offset  - offset if file of directory
+*
+* This function reads the End of Central Directory.  If it can't read the
+* data, eocd is nil, and an error is returned.
+*
+***********************************************************************/
 
 static int ziprlua_eocd(lua_State *L)
 {
@@ -330,13 +414,9 @@ static int ziprlua_eocd(lua_State *L)
     return 2;
   }
   
-  if (fread(&eocd,sizeof(zip_eocd__s),1,*pfp) != 1)
-  {
-    lua_pushnil(L);
-    lua_pushinteger(L,ENODATA);
+  if (!zwlib_fread(L,&eocd,sizeof(zip_eocd__s),1,*pfp))
     return 2;
-  }
-  
+    
   /* FIXME: adjust byte order on big endian systems */
   
   if (eocd.magic != ZIP_MAGIC_EOCD)
@@ -362,6 +442,7 @@ static int ziprlua_eocd(lua_State *L)
 
 static const luaL_Reg m_ziprlua[] =
 {
+  { "data"	, ziprlua_data	} ,
   { "file" 	, ziprlua_file	} ,
   { "dir"	, ziprlua_dir	} ,
   { "eocd"	, ziprlua_eocd	} ,

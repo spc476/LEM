@@ -69,12 +69,14 @@ do
   local _LEM
   local function store(entry)
     local function add(list,name)
-      if VER < entry.luamin or VER > entry.luamax then
+      if VER < entry.extra.luamin 
+      or VER > entry.extra.luamax 
+      then
         return
       end
       
       if list[name] then
-        if entry.version < list[name].version then
+        if entry.extra.version < list[name].extra.version then
           return
         end
       end
@@ -82,12 +84,12 @@ do
       list[name] = entry
     end
     
-    if entry.file == "_LEM" then
+    if entry.extra and entry.extra.cpu == "_LEM" then
       _LEM = entry
       return
     end
     
-    local list,name = entry.module:match("^_([^%/]+)%/(.*)")
+    local list,name = entry.name:match("^_([^%/]+)%/(.*)")
     local dolist
     
     if list == 'MODULES' then
@@ -96,27 +98,29 @@ do
       dolist = APP
     else
       dolist = FILES
+      entry.name = name
     end
     
     if dolist == FILES then
       dolist[name] = entry
-    elseif entry.os == 'none' then
+    elseif entry.extra.os == 'none' then
       add(dolist,name)
     else
-      if entry.os == sys._SYSNAME and entry.cpu == sys._CPU then
+      if  entry.extra.os  == sys._SYSNAME 
+      and entry.extra.cpu == sys._CPU 
+      then
         add(dolist,name)
       end      
     end
   end
   
-  lem  = io.open("sample.lem","rb")
+  lem        = io.open("sample.lem","rb")
   local eocd = zipr.eocd(lem);
 
   lem:seek('set',eocd.offset)
 
   for i = 1 , eocd.numentries do
     local dir,err = zipr.dir(lem)
-  
     if not dir then error("ERROR %s: %s","sample.lem",errno[err]) end
     store(dir)
   end
@@ -137,7 +141,7 @@ end
 local function zip_loader(name)
   if not MODULES[name] then return string.format("\n\tno file %s",name) end
 
-  if MODULES[name].os == 'none' then
+  if MODULES[name].extra.os == 'none' then
     local data = {}
     read_data(MODULES[name],lem,function(s) data[#data + 1] = s end)
     local func,err = load(function() return table.remove(data,1) end,name)

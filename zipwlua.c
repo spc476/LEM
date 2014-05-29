@@ -21,37 +21,6 @@
 *
 * The ZIP file writer.
 *
-* offset,err = zipw.file(lem,fileinfo[,extra])
-*
-*	lem is an open LEM file (result from io.open()) for writing.  This
-*	functions writes the fileinfo and if the extra flag is true, the Lua
-*	extention data, to the LEM file.  This will return the offset of the
-*	file entry in the LEM file.
-*
-*	This does NOT write the compressed data.  That is done immedately
-*	after a call to this function.
-*
-*	The only restriction is that this data (and the compressed data)
-*	cannot be the last thing written to the file.
-*
-* offset,err = zipw.dir(lem,dirinfo[,extra])
-*
-*	lem is an open LEM file or writing.  This function writes the dirinfo
-*	and the Lua extended data if extra is true.  This function only
-*	writes one directory entry, and returns the offset of the directory
-*	information in the LEM file.
-*
-*	Two restrictions:  all dir entries need to be together.  And the
-*	directory entries cannot be the last thing written to the file.
-*
-* zipr.eocd(lem,#entries,dirsize,diroffset)
-*
-*	lem is an open LEM file for writing.  dirsize is the size (in bytes)
-*	of the central directory, and the diroffset is the offset in the
-*	LEM file of the first directory entry.
-*
-*	This MUST be the last thing written to the LEM file.
-*
 *************************************************************************/
 
 #include <stdio.h>
@@ -68,11 +37,41 @@
 
 #include "lem.h"
 
+#if LUA_VERSION_NUM == 501
+#  define DEF_LUA_MAJOR	5
+#  define DEF_LUA_MINOR 1
+#elif LUA_VERSION_NUM == 502
+#  define DEF_LUA_MAJOR 5
+#  define DEF_LUA_MINOR 2
+#endif
+
 #define abs_index(L,i) ((i) > 0 || (i) <= LUA_REGISTRYINDEX ? (i) : lua_gettop(L) + (i) + 1)
 
 /***********************************************************************/
 
-static uint16_t zwlua_toversion(lua_State *L,int idx)
+static bool zwlib_fwrite(
+        lua_State  *L,
+        const void *data,
+        size_t      size,
+        size_t      nmemb,
+        FILE       *fp
+)
+{
+  if (nmemb > 0)
+  {
+    if (fwrite(data,size,nmemb,fp) != nmemb)
+    {
+      lua_pushnil(L);
+      lua_pushinteger(L,errno);
+      return false;
+    }
+  }
+  return true;
+}
+
+/***********************************************************************/
+
+static uint16_t zwlua_toversion(lua_State *L,int idx,int major,int minor)
 {
   if (lua_isstring(L,idx))
   {
@@ -86,7 +85,7 @@ static uint16_t zwlua_toversion(lua_State *L,int idx)
   else if (lua_isnumber(L,idx))
     return lua_tointeger(L,idx);
   else
-    return 0;
+    return (uint16_t)((((uint8_t)major) << 8) | ((uint8_t)minor));
 }
 
 /***********************************************************************/
@@ -109,7 +108,7 @@ static uint16_t zwlua_toos(lua_State *L,int idx)
   else if (lua_isnumber(L,idx))
     return lua_tointeger(L,idx);
   else
-    return 0;
+    return ZIPE_OS_NONE;
 }
 
 /***********************************************************************/
@@ -139,7 +138,7 @@ static uint16_t zwlua_tocpu(lua_State *L,int idx,uint16_t os)
   else if (lua_isnumber(L,idx))
     return lua_tointeger(L,idx);
   else
-    return 0;
+    return ZIPE_CPU_NONE;
 }
 
 /***********************************************************************/
@@ -164,84 +163,158 @@ static uint16_t zwlua_tolicense(lua_State *L,int idx)
   else if (lua_isnumber(L,idx))
     return lua_tointeger(L,idx);
   else
+    return ZIPE_LIC_NONE;
+}
+
+/***********************************************************************/
+
+static size_t zwlua_toextra(lua_State *L,int idx,zip_lua_ext__s *ext)
+{
+  if (lua_isnil(L,idx))
     return 0;
+  else
+  {
+    idx       = abs_index(L,idx);
+    ext->id   = ZIP_EXT_LUA;
+    ext->size = sizeof(zip_lua_ext__s) - (sizeof(uint16_t) * 2);
+    
+    lua_getfield(L,idx,"luamin");
+    ext->luavmin = zwlua_toversion(L,-1,DEF_LUA_MAJOR,DEF_LUA_MINOR);
+    lua_getfield(L,idx,"luamax");
+    ext->luavmax = zwlua_toversion(L,-1,DEF_LUA_MAJOR,DEF_LUA_MINOR);
+    lua_getfield(L,idx,"version");
+    ext->version = zwlua_toversion(L,-1,0,0);
+    lua_getfield(L,idx,"os");
+    ext->os = zwlua_toos(L,-1);
+    lua_getfield(L,idx,"cpu");
+    ext->cpu = zwlua_tocpu(L,-1,ext->os);
+    lua_getfield(L,idx,"license");
+    ext->license = zwlua_tolicense(L,-1);  
+    lua_pop(L,6);
+    return sizeof(zip_lua_ext__s);
+  }
 }
 
 /***********************************************************************/
 
-static void zwlua_toluaext(lua_State *L,int idx,zip_lua_ext__s *ext)
+static size_t zwlua_tostring(lua_State *L,int idx,const char **pstr)
 {
-  idx       = abs_index(L,idx);
-  ext->id   = ZIP_EXT_LUA;
-  ext->size = sizeof(zip_lua_ext__s) - (sizeof(uint16_t) * 2);
-  
-  lua_getfield(L,idx,"luamin");
-  ext->luavmin = zwlua_toversion(L,-1);
-  lua_getfield(L,idx,"luamax");
-  ext->luavmax = zwlua_toversion(L,-1);
-  lua_getfield(L,idx,"version");
-  ext->version = zwlua_toversion(L,-1);
-  lua_getfield(L,idx,"os");
-  ext->os = zwlua_toos(L,-1);
-  lua_getfield(L,idx,"cpu");
-  ext->cpu = zwlua_tocpu(L,-1,ext->os);
-  lua_getfield(L,idx,"license");
-  ext->license = zwlua_tolicense(L,-1);  
-  lua_pop(L,6);
+  if (lua_isnil(L,idx))
+    return 0;
+  else
+  {
+    size_t size;
+    *pstr = lua_tolstring(L,idx,&size);
+    return size;
+  }
 }
 
 /***********************************************************************/
 
-static modtime__s zwlua_tomodtime(lua_State *L,int idx)
+static void zwlua_tomodtime(
+        lua_State *L,
+        int idx,
+        uint16_t *modtime,
+        uint16_t *moddate
+)
 {
-  modtime__s mod;
-  time_t     mtime;
-  struct tm  stm;
+  time_t    mtime;
+  struct tm stm;
   
-  mtime = lua_tonumber(L,idx);
-  stm   = *gmtime(&mtime);
+  if (lua_isnil(L,idx))
+    mtime = time(NULL);
+  else
+    mtime = lua_tonumber(L,idx);
   
-  mod.modtime = (stm.tm_hour << 11)
-              | (stm.tm_min  <<  5)
-              | (stm.tm_sec  >>  1) /* 2 second increment */
-              ;
-  mod.moddate = (((stm.tm_year + 1900) - 1980) << 9)
-              |  ((stm.tm_mon  +    1)         << 5)
-              |  ((stm.tm_mday       )         << 0)
-              ;
-  return mod;
+  stm = *gmtime(&mtime);
+  
+  *modtime = (stm.tm_hour << 11)
+           | (stm.tm_min  <<  5)
+           | (stm.tm_sec  >>  1) /* 2 second increment */
+           ;
+  *moddate = (((stm.tm_year + 1900) - 1980) << 9)
+           |  ((stm.tm_mon  +    1)         << 5)
+           |  ((stm.tm_mday       )         << 0)
+           ;
 }
 
-/***********************************************************************/
+/***********************************************************************
+*
+*	err = zipw.data(lem,{
+*		crc   = crc,		-- MANDATORY
+*		csize = compresssize,	-- MANDATORY
+*		usize = normalsize	-- MANDATORY
+*	})
+*
+*	lem - file open for binary writing
+*
+* This function writes the data descriptor record to the LEM file.  This
+* MUST be written if zipw.file() was called with a crc, csize and usize
+* of 0 (or not present).  This MUST be written immediately after the 
+* compressed data has been written.
+*
+* If it was written, return 0.  Otherwise, return an error.
+*
+**************************************************************************/
 
-static void zwlua_tofile(lua_State *L,int idx,zip_file__s *file,bool luaext)
+static int zipwlua_data(lua_State *L)
 {
-  modtime__s mod;
+  FILE        **pfp;
+  zip_data__s   data;
   
-  idx = abs_index(L,idx);
+  pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
+  luaL_checktype(L,2,LUA_TTABLE);
   
-  file->magic       = ZIP_MAGIC_FILE;
-  file->byversion   = 20;	/* MS-DOS, ZIP version 2.0 */
-  file->compression = 8;	/* deflate */
+  lua_getfield(L,2,"crc");
+  data.crc = luaL_checknumber(L,-1);
+  lua_getfield(L,2,"csize");
+  data.csize = luaL_checknumber(L,-1);
+  lua_getfield(L,2,"usize");
+  data.usize = luaL_checknumber(L,-1);
   
-  lua_getfield(L,idx,"modtime");
-  mod = zwlua_tomodtime(L,-1);
-  file->modtime = mod.modtime;
-  file->moddate = mod.moddate;
-  lua_getfield(L,idx,"crc");
-  file->crc = lua_tonumber(L,-1);
-  lua_getfield(L,idx,"csize");
-  file->csize = lua_tointeger(L,-1);
-  lua_getfield(L,idx,"usize");
-  file->usize = lua_tointeger(L,-1);
-  lua_getfield(L,idx,"name");
-  file->namelen  = lua_objlen(L,-1);
-  file->extralen = luaext ? sizeof(zip_lua_ext__s) : 0 ;
-  file->flags    = 0;
-  lua_pop(L,5);
+  /* FIXME: adjust byte order on big endian systems */
+
+  errno = 0;
+  fwrite(&data,sizeof(zip_data__s),1,*pfp);
+  lua_pushinteger(L,errno);
+  return 1;
 }
 
-/***********************************************************************/
+/***********************************************************************
+*
+* offset,err = zipw.file(lem, {
+*		modtime = modtime,	-- os.time()
+*		crc     = crc,		-- [1]
+*		csize   = compresssize,	-- [1]
+*		usize   = normalsize,	-- [1]
+*		name    = name,		-- MANDATORY
+*		data    = true,		-- false (used to mark zip_data__s usage)
+*		utf8    = true,		-- false (filename in UTF-8)
+*		extra   = {
+*				luamin = ver,	-- _G._VERSION
+*				luamax = ver,	-- _G__VERSION
+*				version = ver,	-- '0.0'
+*				os      = os,	-- 'none'
+*				cpu     = cpu,	-- 'none'
+*				license = lic,	-- 'unknown'
+*			  },
+*	})
+*
+*	lem - file open for binary writing
+*
+* This function writes a local file header to the LEM file.  This can appear
+* anywhere in the LEM file, but MUST NOT be the last thing written.  This
+* does NOT write the compressed data to the file, but any compressed data
+* MUST be written after this call, and such data MUST appear immediately
+* after this header.  
+*
+* This returns the offset of the local file header in the file.
+*
+* [1]	The crc, csize and usize fields are 0, or are not present, then
+*	a call to zipw.data() MUST happen after the compressed data is
+*	written to the file.  Also, the data flag must be set to true.
+*
+**************************************************************************/
 
 static int zipwlua_file(lua_State *L)
 {
@@ -250,133 +323,183 @@ static int zipwlua_file(lua_State *L)
   zip_file__s      file;
   zip_lua_ext__s   ext;
   const char      *name;
-
-  lua_settop(L,3);
+  
   pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
   pos = ftell(*pfp);
   luaL_checktype(L,2,LUA_TTABLE);
-  zwlua_toluaext(L,2,&ext);
-  lua_getfield(L,2,"name");
-  name = luaL_checkstring(L,-1);
-
-  zwlua_tofile(L,2,&file,lua_toboolean(L,3));
-
-  /* FIXME: adjust byte order on big endian systems */
-    
-  if (
-          (fwrite(&file,sizeof(zip_file__s),1,*pfp) != 1)
-       || (fwrite(name,1,file.namelen,*pfp)         != file.namelen)
-     )
-  {
-    lua_pushnil(L);
-    lua_pushinteger(L,errno);
-    return 2;
-  }
   
-  if (file.extralen > 0)
-  {
-    if (fwrite(&ext,file.extralen,1,*pfp) != 1)
-    {
-      lua_pushnil(L);
-      lua_pushinteger(L,errno);
-      return 2;
-    }
-  }
-    
+  file.magic       = ZIP_MAGIC_FILE;
+  file.byversion   = 20;	/* MS-DOS, ZIP version 2 */
+  file.compression =  8;	/* deflate */
+  file.flags       =  0;
+  
+  lua_getfield(L,2,"modtime");
+  zwlua_tomodtime(L,-1,&file.modtime,&file.moddate);
+  lua_getfield(L,2,"crc");
+  file.crc = luaL_optnumber(L,-1,0);
+  lua_getfield(L,2,"csize");
+  file.csize = luaL_optnumber(L,-1,0);
+  lua_getfield(L,2,"usize");
+  file.usize = luaL_optnumber(L,-1,0);
+  lua_getfield(L,2,"data");
+  file.flags |= lua_toboolean(L,-1) ? ZIPF_DATA : 0;
+  lua_getfield(L,2,"utf8");
+  file.flags |= lua_toboolean(L,-1) ? ZIPF_UTF8 : 0;
+  lua_getfield(L,2,"name");
+  file.namelen = zwlua_tostring(L,-1,&name);
+  lua_getfield(L,2,"extra");
+  file.extralen = zwlua_toextra(L,-1,&ext);
+  
+  /* FIXME: adjust byte order on big endian systems */
+  
+  if (!zwlib_fwrite(L,&file,sizeof(file),1,*pfp))
+    return 2;
+  if (!zwlib_fwrite(L,name,1,file.namelen,*pfp))
+    return 2;
+  if (!zwlib_fwrite(L,&ext,1,file.extralen,*pfp))
+    return 2;
+  
   lua_pushnumber(L,pos);
   lua_pushinteger(L,0);
   return 2;
 }
 
-/***********************************************************************/
+/***********************************************************************
+*
+* offset,err = zipw.dir(lem, {
+*		modtime = modtime,	-- os.time()
+*		crc     = crc,		-- MANDATORY
+*		csize   = compresssize,	-- MANDATORY
+*		usize   = normalsize,	-- MANDATORY
+*		name    = name,		-- MANDATORY
+*		extra   = {
+*				luamin = ver,	-- _G._VERSION
+*				luamax = ver,	-- _G__VERSION
+*				version = ver,	-- '0.0'
+*				os      = os,	-- 'none'
+*				cpu     = cpu,	-- 'none'
+*				license = lic,	-- 'unknown'
+*			  },
+*		comment = comment,
+*		text    = true,		-- false (text file)
+*		data    = true,		-- false (used to mark zip_data__s usage)
+*		utf8    = true,		-- false (filename/comment in UTF-8)
+*		offset  = lem:seek()	-- MANDATORY
+*	})
+*
+*	lem - file open for binary writing
+*
+* This function writes a directory entry to the LEM file.  All such entries
+* MUST appear consecutively in the file, but can appear anywhere except at
+* the end of the file.
+*
+* This returns the offset of the directory entry in the file.
+*
+**************************************************************************/
 
 static int zipwlua_dir(lua_State *L)
 {
   FILE           **pfp;
   long             pos;
   zip_dir__s       dir;
-  zip_file__s      file;
   zip_lua_ext__s   ext;
   const char      *name;
-
-  lua_settop(L,3);
+  const char      *comment;
+  
   pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
   pos = ftell(*pfp);
   luaL_checktype(L,2,LUA_TTABLE);
-  zwlua_toluaext(L,2,&ext);
-  lua_getfield(L,2,"name");
-  name   = luaL_checkstring(L,-1);
-
-  zwlua_tofile(L,2,&file,lua_toboolean(L,3));
   
   dir.magic       = ZIP_MAGIC_CFILE;
-  dir.byversion   = file.byversion;
-  dir.forversion  = file.byversion;
-  dir.flags       = file.flags;
-  dir.compression = file.compression;
-  dir.modtime     = file.modtime;
-  dir.moddate     = file.moddate;
-  dir.crc         = file.crc;
-  dir.csize       = file.csize;
-  dir.usize       = file.usize;
-  dir.namelen     = file.namelen;
-  dir.extralen    = file.extralen;
-  dir.commentlen  = 0;
-  dir.diskstart   = 0;
-  dir.iattr       = ext.cpu == ZIPE_CPU_NONE ? ZIPIA_TEXT : 0;
-  dir.eattr       = 0;
+  dir.byversion   = 20;		/* MS-DOS, ZIP version 2.0 */
+  dir.forversion  = 20;
+  dir.compression =  8;		/* deflate */
+  dir.flags       =  0;
+  dir.diskstart   =  0;
+  dir.eattr       =  0;
   
+  lua_getfield(L,2,"modtime");
+  zwlua_tomodtime(L,-1,&dir.modtime,&dir.moddate);
+  lua_getfield(L,2,"crc");
+  dir.crc = luaL_checknumber(L,-1);
+  lua_getfield(L,2,"csize");
+  dir.csize = luaL_checknumber(L,-1);
+  lua_getfield(L,2,"usize");
+  dir.usize = luaL_checknumber(L,-1);
+  lua_getfield(L,2,"name");
+  dir.namelen = zwlua_tostring(L,-1,&name);
+  lua_getfield(L,2,"extra");
+  dir.extralen = zwlua_toextra(L,-1,&ext);
+  lua_getfield(L,2,"comment");
+  dir.commentlen = zwlua_tostring(L,-1,&comment);
+  lua_getfield(L,2,"data");
+  dir.flags |= lua_toboolean(L,-1) ? ZIPF_DATA : 0;
+  lua_getfield(L,2,"utf8");
+  dir.flags |= lua_toboolean(L,-1) ? ZIPF_UTF8 : 0;
+  lua_getfield(L,2,"text");
+  dir.iattr = lua_toboolean(L,-1) ? ZIPIA_TEXT : 0;
   lua_getfield(L,2,"offset");
   dir.offset = lua_tonumber(L,-1);
-
+  
   /* FIXME: adjust byte order on big endian systems */
 
-  if (
-          (fwrite(&dir,sizeof(zip_dir__s),1,*pfp) != 1)
-       || (fwrite(name,1,dir.namelen,*pfp)        != dir.namelen)
-     )
-  {
-    lua_pushnil(L);
-    lua_pushinteger(L,errno);
+  if (!zwlib_fwrite(L,&dir,sizeof(dir),1,*pfp))
     return 2;
-  }
+  if (!zwlib_fwrite(L,name,1,dir.namelen,*pfp))
+    return 2;
+  if (!zwlib_fwrite(L,&ext,1,dir.extralen,*pfp))
+    return 2;
+  if (!zwlib_fwrite(L,comment,1,dir.commentlen,*pfp))
+    return 2;
   
-  if (dir.extralen > 0)
-  {
-    if (fwrite(&ext,dir.extralen,1,*pfp) != 1)
-    {
-      lua_pushnil(L);
-      lua_pushinteger(L,errno);
-      return 2;
-    }
-  }
-      
   lua_pushnumber(L,pos);
   lua_pushinteger(L,0);
   return 2;
 }
 
-/***********************************************************************/
+/***********************************************************************
+*
+*	err = zipw.eocd(lem,{
+*		entries = #entries,	-- 0
+*		size    = direize,	-- 0 (size in bytes of directory)
+*		offset  = offset	-- 0 (offset in file of directory)
+*	})
+*
+*	lem - file open for binary writing
+*
+* This function writes the End of the Central Directory.  This MUST be
+* at the end of the file, and if everything is 0, then it creates an
+* empty LEM file.
+*
+* If the data was written, return 0; otherwise, return an error.
+*
+**************************************************************************/
 
 static int zipwlua_eocd(lua_State *L)
 {
   zip_eocd__s   eocd;
   FILE        **pfp;
   
-  pfp                = luaL_checkudata(L,1,LUA_FILEHANDLE);
-  eocd.magic        = ZIP_MAGIC_EOCD;
-  eocd.disknum      = 0;
-  eocd.diskstart    = 0;
-  eocd.entries      = lua_tointeger(L,2);
-  eocd.totalentries = lua_tointeger(L,2);
-  eocd.size         = lua_tointeger(L,3);
-  eocd.offset       = lua_tointeger(L,4);
-  eocd.commentlen   = 0;
-
+  pfp = luaL_checkudata(L,1,LUA_FILEHANDLE);
+  luaL_checktype(L,2,LUA_TTABLE);
+  
+  eocd.magic      = ZIP_MAGIC_EOCD;
+  eocd.disknum    = 0;
+  eocd.diskstart  = 0;
+  eocd.commentlen = 0;
+  
+  lua_getfield(L,2,"entries");
+  eocd.totalentries = luaL_optnumber(L,-1,0);
+  eocd.entries      = eocd.totalentries;
+  lua_getfield(L,2,"size");
+  eocd.size = luaL_optnumber(L,-1,0);
+  lua_getfield(L,2,"offset");
+  eocd.offset = luaL_optnumber(L,-1,0);
+  
   /* FIXME: adjust byte order on big endian systems */
   
   fwrite(&eocd,sizeof(zip_eocd__s),1,*pfp);
-  lua_pushinteger(L,0);
+  lua_pushinteger(L,errno);
   return 1;
 }
 
@@ -384,6 +507,7 @@ static int zipwlua_eocd(lua_State *L)
 
 static const luaL_Reg m_ziplua[] =
 {
+  { "data"	, zipwlua_data	} ,
   { "file" 	, zipwlua_file	} ,
   { "dir"	, zipwlua_dir	} ,
   { "eocd"	, zipwlua_eocd	} ,

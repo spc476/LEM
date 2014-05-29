@@ -115,12 +115,14 @@ do
   local _LEM
   local function store(entry)
     local function add(list,name)
-      if VER < entry.luamin or VER > entry.luamax then
+      if VER < entry.extra.luamin 
+      or VER > entry.extra.luamax 
+      then
         return
       end
       
       if list[name] then
-        if entry.version < list[name].version then
+        if entry.extra.version < list[name].extra.version then
           return
         end
       end
@@ -128,12 +130,12 @@ do
       list[name] = entry
     end
     
-    if entry.file == "_LEM" then
+    if entry.extra and entry.extra.cpu == "_LEM" then
       _LEM = entry
       return
     end
     
-    local list,name = entry.module:match("^_([^%/]+)%/(.*)")
+    local list,name = entry.name:match("^_([^%/]+)%/(.*)")
     local dolist
     
     if list == 'MODULES' then
@@ -142,15 +144,17 @@ do
       dolist = APP
     else
       dolist = FILES
+      entry.name = name
     end
     
     if dolist == FILES then
       dolist[name] = entry
-      dolist[name].name = name
-    elseif entry.os == 'none' then
+    elseif entry.extra.os == 'none' then
       add(dolist,name)
     else
-      if entry.os == sys._SYSNAME and entry.cpu == sys._CPU then
+      if  entry.extra.os  == sys._SYSNAME 
+      and entry.extra.cpu == sys._CPU 
+      then
         add(dolist,name)
       end      
     end
@@ -163,7 +167,6 @@ do
 
   for i = 1 , eocd.numentries do
     local dir,err = zipr.dir(lem)
-  
     if not dir then error("ERROR %s: %s","sample.lem",errno[err]) end
     store(dir)
   end
@@ -186,7 +189,7 @@ end
 table.insert(package.loaders,2,function(name)
   if not MODULES[name] then return string.format("\n\tno file %s",name) end
 
-  if MODULES[name].os == 'none' then
+  if MODULES[name].extra.os == 'none' then
     local data = {}
     read_data(MODULES[name],lem,function(s) data[#data + 1] = s end)
     local func,err = load(function() return table.remove(data,1) end,name)
@@ -222,7 +225,8 @@ if not fsys.mkdir(_WORKDIR) then error("cannot create workdir %s",_WORKDIR) end
 fsys.chdir(_WORKDIR)
 
 for name,info in pairs(FILES) do
-  local f = io.open(info.name,"wb")
+  local f,err = io.open(info.name,"wb")
+  if not f then error("%s: %s",name,err) end
   read_data(info,lem,function(s) f:write(s) end)
   f:close()  
 end

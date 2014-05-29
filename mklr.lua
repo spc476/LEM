@@ -161,21 +161,25 @@ do
   com = table.concat(com)
   
   table.insert(list, {
-        extra   = true,
   	name    = "_LEM",
-  	os      = "none",
-  	cpu     = "_LEM",
-  	version = "0.1",
-  	luamin  = "5.1",
-  	luamax  = "5.2",
   	crc     = crc,
   	csize   = #com,
   	usize   = info.st_size,
   	modtime = info.st_mtime,
-  	license = rock.description.license,
+  	extra   =
+  	{
+  	  version = "0.1",
+  	  luamin  = "5.1",
+  	  luamax  = "5.2",
+  	  cpu     = "_LEM",
+  	  license = rock.description.license,
+  	},
+  	
+  	text = true,
+  	comment = "No matter where you go, there you are",
   })
   
-  list[1].offset,err = zipw.file(lem,list[1],true)
+  list[1].offset,err = zipw.file(lem,list[1])
   
   if not list[1].offset then error("_LEM: %s",errno[err]) end
   lem:write(com)
@@ -205,21 +209,23 @@ for cmd,file in pairs(rock.build.install.bin) do
   com = table.concat(com)
   
   table.insert(list, {
-        extra   = true,
   	name    = "_APP/" .. cmd,
-  	os      = "none",
-  	cpu     = "none",
-  	version = rock.version,
-  	luamin  = "5.1",
-  	luamax  = "5.2",
   	crc     = crc,
   	csize   = #com,
   	usize   = info.st_size,
   	modtime = info.st_mtime,
-  	license = rock.description.license,
+  	extra   =
+  	{
+  	  luamin  = "5.1",
+  	  luamax  = "5.2",
+  	  version = rock.version,
+  	  license = rock.description.license
+  	},
+  	
+  	text = true,
   })
   
-  list[#list].offset,err = zipw.file(lem,list[#list],true)
+  list[#list].offset,err = zipw.file(lem,list[#list])
   
   if not list[#list].offset then erorr("%s: %s",cmd,errno[err]) end
   lem:write(com)
@@ -249,21 +255,22 @@ for module,file in pairs(rock.build.modules) do
   com = table.concat(com)
   
   table.insert(list, {
-        extra   = true,
   	name    = "_MODULES/" .. module,
-  	os      = "none",
-  	cpu     = "none",
-  	version = rock.version,
-  	luamin  = "5.1",
-  	luamax  = "5.2",
   	crc     = crc,
   	csize   = #com,
   	usize   = info.st_size,
   	modtime = info.st_mtime,
-  	license = rock.description.license,
+  	extra   =
+  	{
+  	  version = rock.version,
+  	  luamin  = "5.1",
+  	  luamax  = "5.2",
+  	  license = rock.description.license,
+  	},
+  	text = true,
   })
   
-  list[#list].offset,err = zipw.file(lem,list[#list],true)
+  list[#list].offset,err = zipw.file(lem,list[#list])
   
   if not list[#list].offset then error("%s: %s",module,errno[err]) end
   lem:write(com)
@@ -292,18 +299,19 @@ end
 local com,crc = compress_string(SITE_CONFIG)
 
 table.insert(list,{
-	extra = true,
-	name  = "_MODULES/luarocks.site_config",
-	os    = "none",
-	cpu   = "none",
-	version = rock.version,
-	luamin  = "5.1",
-	luamax  = "5.2",
+	name    = "_MODULES/luarocks.site_config",
 	crc     = crc,
 	csize   = #com,
 	usize   = #SITE_CONFIG,
 	modtime = os.time(),
-	license = rock.description.license,
+	extra   =
+	{
+	  luamin = "5.1",
+	  luamax = "5.2",
+	  version = rock.version,
+	  license = rock.description.license,
+	},
+	text = true,
 })
 
 list[#list].offset,err = zipw.file(lem,list[#list],true)
@@ -356,12 +364,11 @@ for _,entry in ipairs(list) do
   end
 end
 
-zipw.eocd(
-	lem,
-	#list,
-	lem:seek() - list[1].coffset,
-	list[1].coffset
-)
+zipw.eocd(lem,{
+	entries = #list,
+	size    = lem:seek() - list[1].coffset,
+	offset  = list[1].coffset
+})
 
 lem:close()
 

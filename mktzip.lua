@@ -45,6 +45,7 @@ X_OTHER_DATA = true
 
 dofile "list.lua"
 lem = io.open("sample.lem","wb")
+masterlist = {}
 
 do
   local com = {}
@@ -65,58 +66,58 @@ do
   local crc = mz.crc(0,LEM)
   local err
 
-  table.insert(list,1, {
-	module  = "_LEM",
-	name    = "_LEM",
-	os      = "none",
-	cpu     = "_LEM",
-	version = "0.1",
-	luamin  = "5.1",
-	luamax  = "5.1",
-	crc     = crc,
-	csize   = #com,
-	usize   = #LEM,
-	modtime = os.time(),
-	license = "none",
+  table.insert(masterlist,{
+  	modtime = os.time(),
+  	crc     = crc,
+  	csize   = #com,
+  	usize   = #LEM,
+  	name    = "_LEM",
+  	extra   =
+  	{
+  	  cpu = "_LEM",
+  	},
+  	
+  	text    = true,
+  	comment = "Lovingly made by hand",  	
   })
 
-  list[1].offset,err = zipw.file(lem,list[1],true)
+  masterlist[1].offset,err = zipw.file(lem,masterlist[1])
 
-  if not list[1].offset then
-    dump(errno[err],list[1])
+  if not masterlist[1].offset then
+    dump(errno[err],masterlist[1])
     os.exit(1)
   end
 
   lem:write(com)
 end
 
-for i = 2 , #list do
+for i = 1 , #list do
+  local entry = { }
   local info,err = fsys.stat(list[i].file)
   if not info then
     print("ERROR",list[i].file,errno[err])
     return
   end
   
-  list[i].usize   = info.st_size
-  list[i].modtime = info.st_mtime
+  entry.usize   = info.st_size
+  entry.modtime = info.st_mtime
   
   if list[i].module then
-    list[i].name = "_MODULES/" .. list[i].module
-    if not list[i].luamin then
-      list[i].luamin  = "5.1"
-      list[i].luamax  = "5.1"
-    end
-  
-    if not list[i].version then
-      list[i].version = "0.0"
-    end  
-
-    if not list[i].license then
-      list[i].license = "LGPL3+"
-    end
+    entry.name = "_MODULES/" .. list[i].module
+    entry.extra = 
+    {
+      luamin  = list[i].luamin,
+      luamax  = list[i].luamax,
+      version = list[i].version,
+      license = list[i].license or "LGPL3+",
+      os      = list[i].os,
+      cpu     = list[i].cpu,
+    }
+    entry.text = entry.extra.os == 'none'
   else
-    list[i].name = "_FILES/" .. list[i].file
-  end
+    entry.name = "_FILES/" .. list[i].file
+    entry.text = true
+  end  
   
   local f = io.open(list[i].file,"rb")
   local com = {}
@@ -135,35 +136,35 @@ for i = 2 , #list do
   )
   f:close()
   
-  com           = table.concat(com)
-  list[i].crc   = crc
-  list[i].csize = #com
+  com         = table.concat(com)
+  entry.crc   = crc
+  entry.csize = #com
   
   local err
-  list[i].offset,err = zipw.file(lem,list[i],list[i].module ~= nil)
-  if not list[i].offset then
-    dump(errno[err],list[i])
+  entry.offset,err = zipw.file(lem,entry)
+  if not entry.offset then
+    dump(errno[err],entry)
     os.exit(1)
   end
 
   lem:write(com)
+  table.insert(masterlist,entry)
   
 end
 
-for _,entry in ipairs(list) do
+for _,entry in ipairs(masterlist) do
   local err
-  entry.coffset,err = zipw.dir(lem,entry,entry.module ~= nil)
+  entry.coffset,err = zipw.dir(lem,entry)
   if not entry.coffset then
     dump(errno[err],entry)
     os.exit(2)
   end
 end
 
-zipw.eocd(
-	lem,
-	#list,
-	lem:seek() - list[1].coffset,
-	list[1].coffset
-)
+zipw.eocd(lem,{
+	entries = #masterlist,
+	size    = lem:seek() - masterlist[1].coffset,
+	offset  = masterlist[1].coffset
+})
 
 lem:close()
