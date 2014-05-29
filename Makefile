@@ -26,11 +26,9 @@ LDLIBS =
 
 .PHONE: all clean
 
-all : zipf zipw.so zipr.so mz.so
+all : zipw.so zipr.so mz.so
 clean:
 	$(RM) -rf zipf zipw.so zipr.so mz.so *~
-
-zipf :
 
 zipw.so : zipwlua.c lem.h
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ $<
