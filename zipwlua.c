@@ -73,19 +73,21 @@ static bool zwlib_fwrite(
 
 static uint16_t zwlua_tolanguage(lua_State *L,int idx,uint16_t def)
 {
-  if (lua_isstring(L,idx))
+  static const char *const languages[] =
   {
-    const char *lang = luaL_checkstring(L,idx);
+    "Lua",
+    "LuaJIT",
+    "WoW",
+    "Trantool",
+    "Perl",
+    "Ruby",
+    "Javascript",
+    "BASIC",
+    NULL
+  };
     
-    if (strcmp(lang,"Lua") == 0)
-      return ZIPE_LANG_LUA;
-    else if (strcmp(lang,"LuaJIT") == 0)
-      return ZIPE_LANG_LUAJIT;
-    else if (strcmp(lang,"BASIC") == 0)
-      return ZIPE_LANG_BASIC;
-    else
-      return ZIPE_LANG_UNKNOWN;
-  }
+  if (lua_isstring(L,idx))
+    return luaL_checkoption(L,idx,"Lua",languages);
   else if (lua_isnumber(L,idx))
     return lua_tointeger(L,idx);
   else
@@ -115,19 +117,21 @@ static uint16_t zwlua_toversion(lua_State *L,int idx,int major,int minor)
 
 static uint16_t zwlua_toos(lua_State *L,int idx)
 {
-  if (lua_isstring(L,idx))
+  static const char *const oslist[] =
   {
-    const char *os = luaL_checkstring(L,idx);
+    "none",
+    "AIX",
+    "BSD",
+    "FreeBSD",
+    "Linux",
+    "Darwin",
+    "Windows",
+    "SunOS",
+    NULL
+  };
   
-    if (strcmp(os,"Linux") == 0)
-      return ZIPE_OS_LINUX;
-    else if (strcmp(os,"SunOS") == 0)
-      return ZIPE_OS_SOLARIS;
-    else if (strcmp(os,"none") == 0)
-      return ZIPE_OS_NONE;
-    else
-      return luaL_error(L,"bad operating system");
-  }
+  if (lua_isstring(L,idx))
+    return luaL_checkoption(L,idx,"none",oslist);
   else if (lua_isnumber(L,idx))
     return lua_tointeger(L,idx);
   else
@@ -138,25 +142,46 @@ static uint16_t zwlua_toos(lua_State *L,int idx)
 
 static uint16_t zwlua_tocpu(lua_State *L,int idx,uint16_t os)
 {
+  static const char *const cpus[] =
+  {
+    "none",
+    "Alpha",
+    "ARM",
+    "AVR32",
+    "ETRAX",
+    "C6X",
+    "H8",
+    "HPPA",
+    "IBM390",
+    "IBMZ",
+    "ITANIUM",
+    "68000",
+    "68010",
+    "68020",
+    "68030",
+    "68040",
+    "M32R",
+    "Microblaze",
+    "MIPS",
+    "PPC",
+    "SH3EB",
+    "SH3EI",
+    "sparc",
+    "sparcv9",
+    "VAX",
+    "i386",
+    "i486",
+    "x86",
+    "x86_64",
+    NULL
+  };
+    
   if (lua_isstring(L,idx))
   {
-    const char *cpu = luaL_checkstring(L,idx);
-  
-    if (strcmp(cpu,"sparcv9") == 0)
-      return ZIPE_CPU_SPARC64;
-    else if (strcmp(cpu,"x86") == 0)
-      return ZIPE_CPU_x86;
-    else if (strcmp(cpu,"none") == 0)
-      return ZIPE_CPU_NONE;
-    else if (strcmp(cpu,"_LEM") == 0) 
-    {
-      if (os == ZIPE_OS_NONE)
-        return ZIPE_META_LEM;
-      else
-        return luaL_error(L,"bad CPU");
-    }
+    if ((strcmp(lua_tostring(L,idx),"_LEM") == 0) && (os == ZIPE_OS_NONE))
+      return ZIPE_META_LEM;
     else
-      return luaL_error(L,"bad CPU");
+      return luaL_checkoption(L,idx,"none",cpus);
   }
   else if (lua_isnumber(L,idx))
     return lua_tointeger(L,idx);
@@ -168,20 +193,38 @@ static uint16_t zwlua_tocpu(lua_State *L,int idx,uint16_t os)
 
 static uint16_t zwlua_tolicense(lua_State *L,int idx)
 {
+  static const char *const license[] =
+  {
+    "unknown",
+    "none",
+    "Public Domain",
+    "GPL1+",
+    "GPL1",
+    "FDL1+",
+    "FDL",
+    "GPL2+",
+    "GPL2",
+    "LGPL2+",
+    "LGPL2",
+    "FDL2+",
+    "FDL2",
+    "GPL3+",
+    "GPL3",
+    "LGPL3+",
+    "LGPL",
+    "FDL3+",
+    "FDL",
+    "AGPL3+",
+    "AGPL3",
+    "MIT",
+  };
+   
   if (lua_isstring(L,idx))
   {
-    const char *lic = luaL_checkstring(L,idx);
-  
-    if (strcmp(lic,"LGPL3+") == 0)
-      return ZIPE_LIC_LGPL3;
-    else if (strcmp(lic,"MIT") == 0)
+    if (strcmp(lua_tostring(L,idx),"MIT/X11") == 0)
       return ZIPE_LIC_MIT;
-    else if (strcmp(lic,"MIT/X11") == 0)
-      return ZIPE_LIC_MIT;
-    else if (strcmp(lic,"none") == 0)
-      return ZIPE_LIC_NONE;
     else
-      return ZIPE_LIC_UNKNOWN;
+      return luaL_checkoption(L,idx,"unknown",license);
   }
   else if (lua_isnumber(L,idx))
     return lua_tointeger(L,idx);
