@@ -78,7 +78,20 @@ static void zwlib_readstring(lua_State *L,FILE *fp,size_t len)
 }
 
 /***********************************************************************/
-        
+
+static void zwlua_pushlanguage(lua_State *L,uint16_t lang)
+{
+  switch(lang)
+  {
+    case ZIPE_LANG_LUA:    lua_pushliteral(L,"Lua");    break;
+    case ZIPE_LANG_LUAJIT: lua_pushliteral(L,"LuaJIT"); break;
+    case ZIPE_LANG_BASIC:  lua_pushliteral(L,"BASIC");  break;
+    default:               lua_pushnil(L);              break;
+  }
+}
+
+/***********************************************************************/
+
 static void zwlua_pushos(lua_State *L,uint16_t os)
 {
   switch(os)
@@ -150,9 +163,11 @@ static bool zwlua_pushext(lua_State *L,FILE *fp,size_t len)
       {
         lua_createtable(L,0,6);
   
-        lua_pushinteger(L,ext.luavmin);
+        zwlua_pushlanguage(L,ext.lang);
+        lua_setfield(L,-2,"language");
+        lua_pushinteger(L,ext.lvmin);
         lua_setfield(L,-2,"luamin");
-        lua_pushinteger(L,ext.luavmax);
+        lua_pushinteger(L,ext.lvmax);
         lua_setfield(L,-2,"luamax");
         lua_pushinteger(L,ext.version);
         lua_setfield(L,-2,"version");

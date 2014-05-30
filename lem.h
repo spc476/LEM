@@ -37,6 +37,19 @@
 
 typedef enum
 {
+  ZIPE_LANG_LUA,
+  ZIPE_LANG_LUAJIT,
+  ZIPE_LANG_WoW,
+  ZIPE_LANG_TARANTOOL,
+  ZIPE_LANG_PERL,
+  ZIPE_LANG_RUBY,
+  ZIPE_LANG_JS,
+  ZIPE_LANG_BASIC,
+  ZIPE_LANG_UNKNOWN = 32767
+} zipe_lang__e;
+
+typedef enum
+{
   ZIPE_CPU_NONE,
   ZIPE_CPU_ALPHA,
   ZIPE_CPU_ARM,
@@ -178,8 +191,9 @@ typedef struct
 {
   uint16_t id;		/* 0x454C */
   uint16_t size;
-  uint16_t luavmin;	/* Lua minimum version support */
-  uint16_t luavmax;	/* Lua maximum version support */
+  uint16_t lang;
+  uint16_t lvmin;	/* Language minimum version support */
+  uint16_t lvmax;	/* Language maximum version support */
   uint16_t os;
   uint16_t cpu;
   uint16_t version;	/* Version */

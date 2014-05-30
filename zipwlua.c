@@ -71,6 +71,29 @@ static bool zwlib_fwrite(
 
 /***********************************************************************/
 
+static uint16_t zwlua_tolanguage(lua_State *L,int idx,uint16_t def)
+{
+  if (lua_isstring(L,idx))
+  {
+    const char *lang = luaL_checkstring(L,idx);
+    
+    if (strcmp(lang,"Lua") == 0)
+      return ZIPE_LANG_LUA;
+    else if (strcmp(lang,"LuaJIT") == 0)
+      return ZIPE_LANG_LUAJIT;
+    else if (strcmp(lang,"BASIC") == 0)
+      return ZIPE_LANG_BASIC;
+    else
+      return ZIPE_LANG_UNKNOWN;
+  }
+  else if (lua_isnumber(L,idx))
+    return lua_tointeger(L,idx);
+  else
+    return def;
+}
+
+/***********************************************************************/
+
 static uint16_t zwlua_toversion(lua_State *L,int idx,int major,int minor)
 {
   if (lua_isstring(L,idx))
@@ -178,10 +201,12 @@ static size_t zwlua_toextra(lua_State *L,int idx,zip_lua_ext__s *ext)
     ext->id   = ZIP_EXT_LUA;
     ext->size = sizeof(zip_lua_ext__s) - (sizeof(uint16_t) * 2);
     
-    lua_getfield(L,idx,"luamin");
-    ext->luavmin = zwlua_toversion(L,-1,DEF_LUA_MAJOR,DEF_LUA_MINOR);
-    lua_getfield(L,idx,"luamax");
-    ext->luavmax = zwlua_toversion(L,-1,DEF_LUA_MAJOR,DEF_LUA_MINOR);
+    lua_getfield(L,idx,"language");
+    ext->lang = zwlua_tolanguage(L,-1,ZIPE_LANG_LUA);
+    lua_getfield(L,idx,"lvmin");
+    ext->lvmin = zwlua_toversion(L,-1,DEF_LUA_MAJOR,DEF_LUA_MINOR);
+    lua_getfield(L,idx,"lvmax");
+    ext->lvmax = zwlua_toversion(L,-1,DEF_LUA_MAJOR,DEF_LUA_MINOR);
     lua_getfield(L,idx,"version");
     ext->version = zwlua_toversion(L,-1,0,0);
     lua_getfield(L,idx,"os");
