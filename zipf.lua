@@ -34,11 +34,11 @@ local mz    = require "mz"
 local function luaversion(min,max)
   if min > 0 then
     if min == max then
-      return string.format("Lua %d.%d",idiv(min,256))
+      return string.format("%d.%d",idiv(min,256))
     else
       minq,minr = idiv(min,256)
       maxq,maxr = idiv(max,256)
-      return string.format("Lua %d.%d-%d.%d",minq,minr,maxq,maxr)
+      return string.format("%d.%d-%d.%d",minq,minr,maxq,maxr)
     end
   else
     return ""
@@ -67,19 +67,19 @@ for i = 1 , eocd.numentries do
   local dir,err = zipr.dir(lem)
   if not dir then error("%s: %s",LEM,errno[err]) end
   if dir.extra then
-    luaversion(dir.extra.luamin,dir.extra.luamax)
     io.stdout:write(string.format(
-    	"%-9s %-9s %-9s %-12s %-8s %s\n",
+    	"%-9s %-9s %-9s %6s %-7s %-8s %s\n",
     	dir.extra.os,
     	dir.extra.cpu,
     	dir.extra.license,
-    	luaversion(dir.extra.luamin,dir.extra.luamax),
+    	dir.extra.language,
+    	luaversion(dir.extra.lvmin,dir.extra.lvmax),
     	version(dir.extra.version),
     	dir.name
     ))
   else
     io.stdout:write(string.format(
-     	"%52s%s\n",
+     	"%54s%s\n",
      	"",
      	dir.name
     ))

@@ -106,8 +106,8 @@ for i = 1 , #list do
     entry.name = "_MODULES/" .. list[i].module
     entry.extra = 
     {
-      luamin  = list[i].luamin,
-      luamax  = list[i].luamax,
+      lvmin  = list[i].lvmin,
+      lvmax  = list[i].lvmax,
       version = list[i].version,
       license = list[i].license or "LGPL3+",
       os      = list[i].os,

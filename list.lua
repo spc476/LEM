@@ -25,14 +25,14 @@
 --		Defaults to "LGPL3+" (LGPL v3 or higher).  Currently,
 --		it can be that, or "MIT".  Others will be added as needed.
 --
---	luamin = "5.1"		-- optional
+--	lvmin = "5.1"		-- optional
 --		Defaults to "5.1".  The minimum version of Lua that can
 --		run the module.
 --
---	luamax = "5.1"		-- optional
+--	lvmax = "5.1"		-- optional
 --		Defaults to "5.1".  The maximum version of Lua that can
 --		run the module.  A Lua module that can only run on one
---		version of Lua should set the luamin and luamax to the same
+--		version of Lua should set the lvmin and lvmax to the same
 --		value.
 --
 -- The following list is an example.  It is expected for you to modify
@@ -334,8 +334,8 @@ list =
     cpu = "x86",
     file = "/home/spc/.luarocks/lib/lua/5.1/lpeg.so",
     version = "0.12",
-    luamin  = "5.1",
-    luamax  = "5.1",
+    lvmin  = "5.1",
+    lvmax  = "5.1",
     license = "MIT",
   },
   {
@@ -344,8 +344,8 @@ list =
     cpu = "x86",
     file = "/home/spc/.luarocks/lib/lua/5.1/lpeg.so",
     version = "0.12",
-    luamin  = "5.2",
-    luamax  = "5.2",
+    lvmin  = "5.2",
+    lvmax  = "5.2",
     license = "MIT",
   },
   {
@@ -354,8 +354,8 @@ list =
     cpu = "none",
     file = "/home/spc/.luarocks/share/lua/5.1/re.lua",
     version = "0.12",
-    luamin  = "5.1",
-    luamax  = "5.2",
+    lvmin  = "5.1",
+    lvmax  = "5.2",
     license = "MIT",
   },  
 
