@@ -166,9 +166,9 @@ static bool zwlua_pushext(lua_State *L,FILE *fp,size_t len)
         zwlua_pushlanguage(L,ext.lang);
         lua_setfield(L,-2,"language");
         lua_pushinteger(L,ext.lvmin);
-        lua_setfield(L,-2,"luamin");
+        lua_setfield(L,-2,"lvmin");
         lua_pushinteger(L,ext.lvmax);
-        lua_setfield(L,-2,"luamax");
+        lua_setfield(L,-2,"lvmax");
         lua_pushinteger(L,ext.version);
         lua_setfield(L,-2,"version");
         zwlua_pushos(L,ext.os);
