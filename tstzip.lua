@@ -69,8 +69,8 @@ do
   local _LEM
   local function store(entry)
     local function add(list,name)
-      if VER < entry.extra.luamin 
-      or VER > entry.extra.luamax 
+      if VER < entry.extra.lvmin 
+      or VER > entry.extra.lvmax 
       then
         return
       end
@@ -106,8 +106,8 @@ do
     elseif entry.extra.os == 'none' then
       add(dolist,name)
     else
-      if  entry.extra.os  == sys._SYSNAME 
-      and entry.extra.cpu == sys._CPU 
+      if  entry.extra.os  == sys.SYSNAME 
+      and entry.extra.cpu == sys.CPU 
       then
         add(dolist,name)
       end      
