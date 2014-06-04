@@ -129,6 +129,7 @@ list =
     os = "SunOS",
     cpu = "sparcv9",
     file = "/home/spc/projects/LEM/misc/sys.so",
+    version = "1.0",
   },
   {
     module = "org.conman.syslog",
@@ -235,6 +236,7 @@ list =
     os = "Linux",
     cpu = "x86",
     file = "/usr/local/lib/lua/5.1/org/conman/sys.so",
+    version = "1.1",
   },
   {
     module = "org.conman.syslog",

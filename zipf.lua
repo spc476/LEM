@@ -63,7 +63,7 @@ local eocd = zipr.eocd(lem);
 
 lem:seek('set',eocd.offset)
 
-for i = 1 , eocd.numentries do
+for i = 1 , eocd.entries do
   local dir,err = zipr.dir(lem)
   if not dir then error("%s: %s",LEM,errno[err]) end
   if dir.extra then

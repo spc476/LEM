@@ -119,7 +119,7 @@ do
 
   lem:seek('set',eocd.offset)
 
-  for i = 1 , eocd.numentries do
+  for i = 1 , eocd.entries do
     local dir,err = zipr.dir(lem)
     if not dir then error("ERROR %s: %s","sample.lem",errno[err]) end
     store(dir)

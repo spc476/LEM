@@ -443,7 +443,7 @@ static int ziprlua_eocd(lua_State *L)
   
   lua_createtable(L,0,3);
   lua_pushnumber(L,eocd.entries);
-  lua_setfield(L,-2,"numentries");
+  lua_setfield(L,-2,"entries");
   lua_pushnumber(L,eocd.size);
   lua_setfield(L,-2,"size");
   lua_pushnumber(L,eocd.offset);
