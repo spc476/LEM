@@ -154,7 +154,7 @@ typedef struct
   uint32_t eattr;
   uint32_t offset;
   uint8_t  data[];
-} __attribute__((packed)) zip_dir__s;
+} __attribute__((packed)) zip_dir__s;	/* CDH -- Central Directory Header */
 
 typedef struct
 {
@@ -170,7 +170,7 @@ typedef struct
   uint16_t namelen;
   uint16_t extralen;
   uint8_t  data[];
-} __attribute__((packed)) zip_file__s;
+} __attribute__((packed)) zip_file__s; /* LFH - Local File Header */
 
 typedef struct
 {
