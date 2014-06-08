@@ -26,8 +26,8 @@
 
 local sys   = require "org.conman.sys"
 local errno = require "org.conman.errno"
-local zipr  = require "zipr"
-local mz    = require "mz"
+local zipr  = require "org.conman.zip.read"
+local zlib  = require "zlib"
 local dump  = require "org.conman.table".dump
 
 -- *********************************************************************
@@ -47,36 +47,50 @@ end
 
 -- ***********************************************************************
 
-local function read_data(entry,lem,sink)
+local function read_data(entry,lem)
   lem:seek('set',entry.offset)
   local file = zipr.file(lem)
+  local cmp  = lem:read(entry.csize)
+  local data = zlib.decompress(cmp,-15)
   
-  local rc,err = mz.inflate(function()  
-    return lem:read(file.csize)
-  end,sink)  
+  if #data ~= entry.usize then
+    return nil,string.format("expecting %d bytes, got %d bytes",entry.usize,#data)
+  end
+  
+  local crc = zlib.crc32(0,data)
+  
+  if crc ~= entry.crc then
+    return nil,"CRC error"
+  end
+  
+  return data
 end
 
 -- ***********************************************************************
 
-local VER     = 5 * 256 + 1
-local MODULES = {}
-local APP     = {}
-local FILES   = {}
+local LANGUAGE = "Lua"
+local VERSION  = _VERSION:match("^Lua (.*)")
+local MODULES  = {}
+local APP      = {}
+local FILES    = {}
 local META
 local lem
 
 do
-  local _LEM
   local function store(entry)
     local function add(list,name)
-      if VER < entry.extra.lvmin 
-      or VER > entry.extra.lvmax 
+      if LANGUAGE ~= entry.extra[0x454C].language then
+        return
+      end
+      
+      if VERSION < entry.extra[0x454C].lvmin
+      or VERSION > entry.extra[0x454C].lvmax
       then
         return
       end
       
       if list[name] then
-        if entry.extra.version < list[name].extra.version then
+        if entry.extra[0x454C].version < list[name].extra[0x454C].version then
           return
         end
       end
@@ -84,12 +98,7 @@ do
       list[name] = entry
     end
     
-    if entry.extra and entry.extra.cpu == "_LEM" then
-      _LEM = entry
-      return
-    end
-    
-    local list,name = entry.name:match("^_([^%/]+)%/(.*)")
+    local list,name = entry.name:match("^([^%/]+)%/(.*)")
     local dolist
     
     if list == 'MODULES' then
@@ -103,11 +112,11 @@ do
     
     if dolist == FILES then
       dolist[name] = entry
-    elseif entry.extra.os == 'none' then
+    elseif not entry.extra[0x454C].os then
       add(dolist,name)
     else
-      if  entry.extra.os  == sys.SYSNAME 
-      and entry.extra.cpu == sys.CPU 
+      if  entry.extra[0x454C].os  == sys.SYSNAME 
+      and entry.extra[0x454C].cpu == sys.CPU 
       then
         add(dolist,name)
       end      
@@ -116,24 +125,11 @@ do
   
   lem        = io.open("sample.lem","rb")
   local eocd = zipr.eocd(lem);
+  local dir  = zipr.dir(lem,eocd.entries)
 
-  lem:seek('set',eocd.offset)
-
-  for i = 1 , eocd.entries do
-    local dir,err = zipr.dir(lem)
-    if not dir then error("ERROR %s: %s","sample.lem",errno[err]) end
-    store(dir)
-  end
-
-  local data = {}
-  read_data(_LEM,lem,function(s) data[#data + 1] = s end)
-  local thelem,err = load(function() return table.remove(data,1) end,"_LEM")
-  
-  if not thelem then error("_LEM: %s",err) end
-  
-  META = {}
-  setfenv(thelem,META)
-  thelem()
+  for i = 1 , #dir do
+    store(dir[i])
+  end  
 end
 
 -- ***********************************************************************
@@ -141,18 +137,32 @@ end
 local function zip_loader(name)
   if not MODULES[name] then return string.format("\n\tno file %s",name) end
 
-  if MODULES[name].extra.os == 'none' then
-    local data = {}
-    read_data(MODULES[name],lem,function(s) data[#data + 1] = s end)
-    local func,err = load(function() return table.remove(data,1) end,name)
-    if not func then error("%s: %s",name,err) end
-    return func
-  end
+  if not MODULES[name].extra[0x454C].os then
+    local data,err = read_data(MODULES[name],lem)
     
-  local lib  = os.tmpname()
-  local f    = io.open(lib,"wb")
+    if not data then
+      return err
+    end
+    
+    local func,err = load(function() local d = data data = nil return d end,name)
+    
+    if not func then 
+      return string.format("%s: %s",name,err)
+    else
+      return func
+    end
+  end
   
-  read_data(MODULES[name],lem,function(s) f:write(s) end)
+  local lib      = os.tmpname()
+  local f        = io.open(lib,"wb")
+  local data,err = read_data(MODULES[name],lem)
+  
+  if not data then
+    return err
+  end
+  
+  f:write(data)
+  f:close()
   
   local func,err = package.loadlib(lib,"luaopen_" .. name:gsub("%.","_"))
   os.remove(lib)
@@ -170,9 +180,6 @@ table.insert(package.loaders,2,zip_loader)
 
 print("PATH",package.path)
 print("CPATH",package.cpath)
-
-print()
-print(META.NOTES)
 
 date = require "org.conman.date"
 
