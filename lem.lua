@@ -103,11 +103,8 @@ local VERSION = _VERSION:match("^Lua (.*)")
 
 local function store(entry,lemfile)
   local function add(list,name)
-    if entry.extra[0x454C].language ~= "Lua" then
-      return
-    end
-    
-    if VERSION  < entry.extra[0x454C].lvmin
+    if entry.extra[0x454C].language ~= "Lua"
+    or VERSION  < entry.extra[0x454C].lvmin
     or VERSION  > entry.extra[0x454C].lvmax then
       return
     end
@@ -162,5 +159,4 @@ end
 -- ************************************************************************
 
 table.insert(package.loaders,2,lemloader)
-
 return loadlem
