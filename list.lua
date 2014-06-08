@@ -1,35 +1,45 @@
 
 -- *************************************************************************
 --
--- Each entry is a table with the following fields:
+-- Each entry is a table with the following fields (all optional)
 --
---	module = "name"		-- MANDATORY
+--	module = "name"
 --		The module name as it would appear in a require() statment.
+--		If this is set, the resulting module is placed under the
+--		"MODULES/" directory.
 --
---	file = "/path/to/file"	-- MANDATORY
---		The absolute path to the module file.
+--	file = "/path/to/file"
+--		The absolute path to the module file.  This is optional
+--		if the module name is specified (and in that case, the
+--		file will be located from package.path or package.cpath),
+--		otherwise, it's mandatory.
 --
---	os = "operatingsystem"	-- MANDATORY
---		Should be "none" if a Lua file.  Otherwise, it needs
---		to be the value of org.conman.sys._SYSNAME
+--	os = "operatingsystem"
+--		Should only be specified if the binary module is being
+--		packaged on a different system.  Othersise, this will
+--		be set (if needed) to org.conman.sys.SYSNAME .
 --
---	cpu = "cpu"		-- MANDATORY
---		Should be "none" if a Lua file.  Otherwise, it needs
---		to be the value of org.conman.sys._CPU
+--	osver = "4.3.2"
+--		The version of the operating system.  This should only be
+--		specified if needed, and it defaults to
+--		org.conman.sys.RELEASE .
 --
---	version = "1.0"		-- optional
---		Defaults to "0.0" (i.e. not available).  Max version
---		number suported is 255.255.
+--	cpu = "cpu"
+--		Should only be specified if the binary module is being
+--		packaged on a different system.  Otherwise, this will
+--		be set (if needed) to org.conman.sys.CPU .
 --
---	license = "license"	-- optinal
---		Defaults to "LGPL3+" (LGPL v3 or higher).  Currently,
---		it can be that, or "MIT".  Others will be added as needed.
+--	version = "1.0"
+--		Version of the module.  
 --
---	lvmin = "5.1"		-- optional
+--	license = "license"
+--		License of the module, for instance, "GPLv3" or "MIT".
+--
+--	lvmin = "5.1"
 --		Defaults to "5.1".  The minimum version of Lua that can
 --		run the module.
 --
---	lvmax = "5.1"		-- optional
+--	lvmax = "5.1"
 --		Defaults to "5.1".  The maximum version of Lua that can
 --		run the module.  A Lua module that can only run on one
 --		version of Lua should set the lvmin and lvmax to the same
