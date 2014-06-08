@@ -25,35 +25,7 @@
 -- ********************************************************************
 
 local errno = require "org.conman.errno"
-local idiv  = require "org.conman.math".idiv
-local zipr  = require "zipr"
-local mz    = require "mz"
-
--- ***********************************************************************
-
-local function luaversion(min,max)
-  if min > 0 then
-    if min == max then
-      return string.format("%d.%d",idiv(min,256))
-    else
-      minq,minr = idiv(min,256)
-      maxq,maxr = idiv(max,256)
-      return string.format("%d.%d-%d.%d",minq,minr,maxq,maxr)
-    end
-  else
-    return ""
-  end
-end
-
--- ***********************************************************************
-
-local function version(ver)
-  if ver > 0 then
-    return string.format("%d.%d",idiv(ver,256))
-  else
-    return ""
-  end
-end
+local zipr  = require "org.conman.zip.read"
 
 -- ***********************************************************************
 
@@ -61,27 +33,30 @@ local LEM  = arg[1] or "sample.lem"
 local lem  = io.open(LEM,"rb")
 local eocd = zipr.eocd(lem);
 
-lem:seek('set',eocd.offset)
+if eocd.comment then print(eocd.comment) end
 
-for i = 1 , eocd.entries do
-  local dir,err = zipr.dir(lem)
-  if not dir then error("%s: %s",LEM,errno[err]) end
-  if dir.extra then
+local list = zipr.dir(lem,eocd.entries)
+
+for i = 1 , #list do
+  if list[i].extra[0x454C] then
+    lua = list[i].extra[0x454C]
+    
     io.stdout:write(string.format(
-    	"%-9s %-9s %-9s %6s %-7s %-8s %s\n",
-    	dir.extra.os,
-    	dir.extra.cpu,
-    	dir.extra.license,
-    	dir.extra.language,
-    	luaversion(dir.extra.lvmin,dir.extra.lvmax),
-    	version(dir.extra.version),
-    	dir.name
-    ))
+      "%-9s %-9s %-9s %6s %-3s %-3s %-6s %s\n",
+      lua.os       or "-",
+      lua.cpu      or "",
+      lua.license  or "",
+      lua.language or "",
+      lua.lvmin    or "",
+      lua.lvmax    or "",
+      lua.version  or "",
+      list[i].name
+    )) 
   else
     io.stdout:write(string.format(
-     	"%54s%s\n",
-     	"",
-     	dir.name
+    	"%54s%s\n",
+    	"",
+    	list[i].name
     ))
-  end
+  end  
 end
