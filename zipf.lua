@@ -43,7 +43,7 @@ for i = 1 , #list do
     
     io.stdout:write(string.format(
       "%-9s %-9s %-9s %6s %-3s %-3s %-6s %s\n",
-      lua.os       or "-",
+      lua.os       or "",
       lua.cpu      or "",
       lua.license  or "",
       lua.language or "",
@@ -54,7 +54,7 @@ for i = 1 , #list do
     )) 
   else
     io.stdout:write(string.format(
-    	"%54s%s\n",
+    	"%52s%s\n",
     	"",
     	list[i].name
     ))
