@@ -49,18 +49,18 @@ local function open_module(entry)
   local file
   
   if entry.file then
-    local info      = fsys.stat(entry.file)
-    extra.cpu       = entry.cpu
-    extra.os        = entry.os
-    extra.osversion = entry.osversion
+    local info  = fsys.stat(entry.file)
+    extra.cpu   = entry.cpu
+    extra.os    = entry.os
+    extra.osver = entry.osversion
     return io.open(entry.file,"rb"),info,extra
   end
   
   local file,info = path_module(entry.module,package.cpath)
   if file then
-    extra.cpu       = entry.cpu       or sys.CPU
-    extra.os        = entry.os        or sys.SYSNAME
-    extra.osversion = entry.osversion or sys.RELEASE:match "^([^-]+)%-?"
+    extra.cpu   = entry.cpu       or sys.CPU
+    extra.os    = entry.os        or sys.SYSNAME
+    extra.osver = entry.osversion or sys.RELEASE:match "^([^-]+)%-?"
     return file,info,extra
   end
   
