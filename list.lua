@@ -42,7 +42,7 @@
 -- file.
 -- *************************************************************************
 
-list = 
+LIST = 
 {
   -- ********************************************************
   -- modules for Solaris 64b
@@ -50,92 +50,92 @@ list =
   
   {
     module = "org.conman.base64",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/base64.so",
+    os     = "SunOS",
+    cpu    = "sparcv9",
+    file   = "/home/spc/projects/LEM/misc/base64.so",
   },
   {
     module = "org.conman.crc",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/crc.so",
+    os     = "SunOS",
+    cpu    = "sparcv9",
+    file   = "/home/spc/projects/LEM/misc/crc.so",
   },
   {
-    module = "org.conman.env",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/env.so",
+    module  = "org.conman.env",
+    os      = "SunOS",
+    cpu     = "sparcv9",
+    file    = "/home/spc/projects/LEM/misc/env.so",
     version = "5.1",
   },
   {
-    module = "org.conman.errno",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/errno.so",
+    module  = "org.conman.errno",
+    os      = "SunOS",
+    cpu     = "sparcv9",
+    file    = "/home/spc/projects/LEM/misc/errno.so",
     version = "5.1",
   },
   {
     module = "org.conman.fsys",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/fsys.so",
+    os     = "SunOS",
+    cpu    = "sparcv9",
+    file   = "/home/spc/projects/LEM/misc/fsys.so",
   },
   {
     module = "org.conman.hash",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/hash.so",
+    os     = "SunOS",
+    cpu    = "sparcv9",
+    file   = "/home/spc/projects/LEM/misc/hash.so",
   },
   {
-    module = "org.conman.iconv",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/iconv.so",
+    module  = "org.conman.iconv",
+    os      = "SunOS",
+    cpu     = "sparcv9",
+    file    = "/home/spc/projects/LEM/misc/iconv.so",
     version = "1.1",
   },
   {
-    module = "org.conman.math",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/math.so",
+    module  = "org.conman.math",
+    os      = "SunOS",
+    cpu     = "sparcv9",
+    file    = "/home/spc/projects/LEM/misc/math.so",
     version = "5.1",
   },
   {
     module = "org.conman.net",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/net.so",
+    os     = "SunOS",
+    cpu    = "sparcv9",
+    file   = "/home/spc/projects/LEM/misc/net.so",
   },
   {
     module = "org.conman.pollset",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/pollset.so",
+    os     = "SunOS",
+    cpu    = "sparcv9",
+    file   = "/home/spc/projects/LEM/misc/pollset.so",
   },
   {
     module = "org.conman.process",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/process.so",
+    os     = "SunOS",
+    cpu    = "sparcv9",
+    file   = "/home/spc/projects/LEM/misc/process.so",
   },
   {
     module = "org.conman.strcore",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/strcore.so",
+    os     = "SunOS",
+    cpu    = "sparcv9",
+    file   = "/home/spc/projects/LEM/misc/strcore.so",
   },
   {
-    module = "org.conman.sys",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/sys.so",
+    module  = "org.conman.sys",
+    os      = "SunOS",
+    cpu     = "sparcv9",
+    file    = "/home/spc/projects/LEM/misc/sys.so",
     version = "1.0",
   },
   {
-    module = "org.conman.syslog",
-    os = "SunOS",
-    cpu = "sparcv9",
-    file = "/home/spc/projects/LEM/misc/syslog.so",
+    module  = "org.conman.syslog",
+    os      = "SunOS",
+    cpu     = "sparcv9",
+    file    = "/home/spc/projects/LEM/misc/syslog.so",
     version = "5.1",
   },
 
@@ -143,185 +143,68 @@ list =
   -- modules for Linux 32b
   -- ********************************************************
   
+  "org.conman.base64",
+  "org.conman.crc",
   {
-    module = "org.conman.base64",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/base64.so",
+    module  = "org.conman.env",
+    version = "1.0.0",
   },
   {
-    module = "org.conman.crc",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/crc.so",
+    module  = "org.conman.errno",
+    version = "1.0.0",
+  },
+  "org.conman.fsys",
+  "org.conman.fsys.magic",
+  "org.conman.hash",
+  {
+    module  = "org.conman.iconv",
+    version = "1.1.1",
   },
   {
-    module = "org.conman.env",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/env.so",
+    module  = "org.conman.math",
     version = "5.1",
   },
+  "org.conman.net",
+  "org.conman.net.ipacl",
+  "org.conman.pollset",
+  "org.conman.process",
+  "org.conman.strcore",
   {
-    module = "org.conman.errno",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/errno.so",
-    version = "5.1",
+    module  = "org.conman.sys",
+    version = "1.1.1",
   },
   {
-    module = "org.conman.fsys",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/fsys.so",
+    module  = "org.conman.syslog",
+    version = "1.0.2",
   },
-  {
-    module = "org.conman.fsys.magic",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/fsys/magic.so",
-  },
-  {
-    module = "org.conman.hash",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/hash.so",
-  },
-  {
-    module = "org.conman.iconv",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/iconv.so",
-    version = "1.1",
-  },
-  {
-    module = "org.conman.math",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/math.so",
-    version = "5.1",
-  },
-  {
-    module = "org.conman.net",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/net.so",
-  },
-  {
-    module = "org.conman.net.ipacl",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/net/ipacl.so",
-  },
-  {
-    module = "org.conman.pollset",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/pollset.so",
-  },
-  {
-    module = "org.conman.process",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/process.so",
-  },
-  {
-    module = "org.conman.strcore",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/strcore.so",
-  },
-  {
-    module = "org.conman.sys",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/sys.so",
-    version = "1.1",
-  },
-  {
-    module = "org.conman.syslog",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/syslog.so",
-    version = "5.1",
-  },
-  {
-    module = "org.conman.tcc",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/org/conman/tcc.so",
-  },
+  "org.conman.tcc",
 
   -- ********************************************************
   -- Modules written in Lua
   -- ********************************************************
   
-  {
-    module = "org.conman.cc",
-    os = "none",
-    cpu = "none",
-    file = "/usr/local/share/lua/5.1/org/conman/cc.lua",
-  },
-  {
-    module = "org.conman.date",
-    os = "none",
-    cpu = "none",
-    file = "/usr/local/share/lua/5.1/org/conman/date.lua",
-  },
-  {
-    module = "org.conman.debug",
-    os = "none",
-    cpu = "none",
-    file = "/usr/local/share/lua/5.1/org/conman/debug.lua",
-  },
-  {
-    module = "org.conman.dns.resolv",
-    os = "none",
-    cpu = "none",
-    file = "/usr/local/share/lua/5.1/org/conman/dns/resolv.lua",
-  },
-  {
-    module = "org.conman.getopt",
-    os = "none",
-    cpu = "none",
-    file = "/usr/local/share/lua/5.1/org/conman/getopt.lua",
-  },
-  {
-    module = "org.conman.string",
-    os = "none",
-    cpu = "none",
-    file = "/usr/local/share/lua/5.1/org/conman/string.lua",
-  },
-  {
-    module = "org.conman.table",
-    os = "none",
-    cpu = "none",
-    file = "/usr/local/share/lua/5.1/org/conman/table.lua",
-  },
-  {
-    module = "org.conman.unix",
-    os = "none",
-    cpu = "none",
-    file = "/usr/local/share/lua/5.1/org/conman/unix.lua",
-  },
+  "org.conman.cc",
+  "org.conman.date",
+  "org.conman.debug",
+  "org.conman.dns.resolv",
+  "org.conman.getopt",
+  "org.conman.string",
+  "org.conman.table",
+  "org.conman.unix",
   
   -- ********************************************************
   -- Version 0.10.2 of LPeg
   -- ********************************************************
 
   {
-    module = "lpeg",
-    os = "Linux",
-    cpu = "x86",
-    file = "/usr/local/lib/lua/5.1/lpeg.so",
+    module  = "lpeg",
+    file    = "/usr/local/lib/lua/5.1/lpeg.so",
     version = "0.10",
     license = "MIT",
   },
   {
-    module = "re",
-    os = "none",
-    cpu = "none",
-    file = "/usr/local/share/lua/5.1/re.lua",
+    module  = "re",
+    file    = "/usr/local/share/lua/5.1/re.lua",
     version = "0.10",
     license = "MIT",
   },
@@ -331,33 +214,24 @@ list =
   -- ********************************************************
   
   {
-    module = "lpeg",
-    os = "Linux",
-    cpu = "x86",
-    file = "/home/spc/.luarocks/lib/lua/5.1/lpeg.so",
+    module  = "lpeg",
     version = "0.12",
-    lvmin  = "5.1",
-    lvmax  = "5.1",
+    lvmin   = "5.1",
+    lvmax   = "5.1",
     license = "MIT",
   },
   {
-    module = "lpeg",
-    os = "Linux",
-    cpu = "x86",
-    file = "/home/spc/.luarocks/lib/lua/5.1/lpeg.so",
+    module  = "lpeg",
     version = "0.12",
-    lvmin  = "5.2",
-    lvmax  = "5.2",
+    lvmin   = "5.2",
+    lvmax   = "5.2",
     license = "MIT",
   },
   {
-    module = "re",
-    os = "none",
-    cpu = "none",
-    file = "/home/spc/.luarocks/share/lua/5.1/re.lua",
+    module  = "re",
     version = "0.12",
-    lvmin  = "5.1",
-    lvmax  = "5.2",
+    lvmin   = "5.1",
+    lvmax   = "5.2",
     license = "MIT",
   },  
 
@@ -366,13 +240,21 @@ list =
   -- ********************************************************
   
   {
-    file = "APPNOTE.TXT"
+    file = "APPNOTE.TXT",
+    comment = "The ZIP file format",
+    
   },
   {
     file = "COPYING"
   },
   {
-    file = "README"
+    file = "README",
+    comment = "Much Ado About Nothing",
   },
+  {
+    file = "/home/spc/docs/SPELLS.TXT",
+    name = "Miscellaneous Things About Nothing",
+    comment = "If you this this has significance, think otherwise",
+  }
 }
 
