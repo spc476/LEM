@@ -30,7 +30,24 @@ zipw = require "org.conman.zip.write"
 fsys = require "org.conman.fsys"
 sys  = require "org.conman.sys"
 
-dofile "list.lua"
+LIST = { sys = sys }
+do
+  local f = loadfile("list.lua")
+  setfenv(f,LIST)
+  f()
+  
+  if not LIST.SCRIPTS then
+    LIST.SCRIPTS = {}
+  end
+  
+  if not LIST.FILES then
+    LIST.FILES = {}
+  end  
+  
+  if not LIST.APP then
+    LIST.APP = {}
+  end
+end
 
 local DIR     = package.config:sub(1,1)
 local SEP     = package.config:sub(3,3)
@@ -80,7 +97,7 @@ local function open_module(entry)
     return io.open(entry.file,"rb"),info,extra
   end
   
-  local file,info = path_module(entry.module,package.cpath)
+  local file,info = path_module(entry.name,package.cpath)
   if file then
     extra.cpu   = entry.cpu       or sys.CPU
     extra.os    = entry.os        or sys.SYSNAME
@@ -88,45 +105,18 @@ local function open_module(entry)
     return file,info,extra
   end
   
-  local file,info = path_module(entry.module,package.path)
+  local file,info = path_module(entry.name,package.path)
   return file,info,extra
 end
 
 -- **********************************************************************
 
-local function write_entry(entry)
-  local fp
-  local info
-  local file
-  local dir
-  local data
-  local cmd
-  local extra
+local function write_entry(entry,section,fp,info,extra)
+  local file = zipw.new('file')
+  file.name  = section .. "/" .. (entry.name or entry.file)
   
-  file = zipw.new('file')
-  
-  if entry.module then
-    fp,info,extra = open_module(entry)
-    file.name     = "MODULES/" .. entry.module
-  else
-    fp        = io.open(entry.file,"rb")  
-    info      = fsys.stat(entry.file)
-    file.name = "FILES/" .. (entry.name or entry.file)
-
-    if entry.file:match(".*$.lua$") then
-      extra = new_extra(entry)
-    else
-      extra = {}
-    end
-  end
-  
-  if not fp then
-    error()
-    return
-  end
-  
-  data = fp:read("*a")
-  cmp  = zlib.compress(data,nil,nil,-15)
+  local data = fp:read("*a")
+  local cmp  = zlib.compress(data,nil,nil,-15)
   
   file.usize     = info.st_size
   file.csize     = #cmp
@@ -134,7 +124,7 @@ local function write_entry(entry)
   file.modtime   = info.st_mtime
   file.extra     = { [0x454C] = extra }
   
-  dir            = zipw.new('dir',file)
+  local dir      = zipw.new('dir',file)
   dir.comment    = entry.comment or ""
   dir.iattr.text = entry.cpu == nil
   dir.offset     = zipw.file(ZIP,file)
@@ -146,14 +136,32 @@ end
 
 -- **********************************************************************
 
-for _,entry in ipairs(LIST) do
-  if type(entry) == 'table' then
-    write_entry(entry)
-  else
-    write_entry { module = entry }
+for _,mod in ipairs(LIST.MODULES) do
+  if type(mod) == 'string' then
+    mod = { name = mod }
   end
+  
+  local fp,info,extra = open_module(mod)
+  write_entry(mod,"MODULES",fp,info,extra)
 end
 
+for _,list in ipairs { "APP" , "SCRIPTS" , "FILES" } do
+  for _,file in ipairs(LIST[list]) do
+    local fp       = io.open(file.file)
+    local info     = fsys.stat(file.file)
+    local extra    = {}
+    extra.version  = file.version
+    extra.license  = file.license
+    extra.language = file.language
+    extra.lvmin    = file.lvmin
+    extra.lvmax    = file.lvmax
+    extra.cpu      = file.cpu
+    extra.os       = file.os
+    extra.osver    = file.osver
+    write_entry(file,list,fp,info,extra)
+  end
+end
+  
 local offset,size = zipw.dir(ZIP,CDH)
 local eocd        = zipw.new('eocd')
 eocd.entries      = #CDH

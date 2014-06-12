@@ -52,97 +52,97 @@
 -- file.
 -- *************************************************************************
 
-LIST = 
+MODULES = 
 {
   -- ********************************************************
   -- modules for Solaris 64b
   -- ********************************************************
   
   {
-    module = "org.conman.base64",
+    name = "org.conman.base64",
     os     = "SunOS",
     cpu    = "sparcv9",
     file   = "/home/spc/projects/LEM/misc/base64.so",
   },
   {
-    module = "org.conman.crc",
+    name = "org.conman.crc",
     os     = "SunOS",
     cpu    = "sparcv9",
     file   = "/home/spc/projects/LEM/misc/crc.so",
   },
   {
-    module  = "org.conman.env",
+    name  = "org.conman.env",
     os      = "SunOS",
     cpu     = "sparcv9",
     file    = "/home/spc/projects/LEM/misc/env.so",
     version = "5.1",
   },
   {
-    module  = "org.conman.errno",
+    name  = "org.conman.errno",
     os      = "SunOS",
     cpu     = "sparcv9",
     file    = "/home/spc/projects/LEM/misc/errno.so",
     version = "5.1",
   },
   {
-    module = "org.conman.fsys",
+    name = "org.conman.fsys",
     os     = "SunOS",
     cpu    = "sparcv9",
     file   = "/home/spc/projects/LEM/misc/fsys.so",
   },
   {
-    module = "org.conman.hash",
+    name = "org.conman.hash",
     os     = "SunOS",
     cpu    = "sparcv9",
     file   = "/home/spc/projects/LEM/misc/hash.so",
   },
   {
-    module  = "org.conman.iconv",
+    name  = "org.conman.iconv",
     os      = "SunOS",
     cpu     = "sparcv9",
     file    = "/home/spc/projects/LEM/misc/iconv.so",
     version = "1.1",
   },
   {
-    module  = "org.conman.math",
+    name  = "org.conman.math",
     os      = "SunOS",
     cpu     = "sparcv9",
     file    = "/home/spc/projects/LEM/misc/math.so",
     version = "5.1",
   },
   {
-    module = "org.conman.net",
+    name = "org.conman.net",
     os     = "SunOS",
     cpu    = "sparcv9",
     file   = "/home/spc/projects/LEM/misc/net.so",
   },
   {
-    module = "org.conman.pollset",
+    name = "org.conman.pollset",
     os     = "SunOS",
     cpu    = "sparcv9",
     file   = "/home/spc/projects/LEM/misc/pollset.so",
   },
   {
-    module = "org.conman.process",
+    name = "org.conman.process",
     os     = "SunOS",
     cpu    = "sparcv9",
     file   = "/home/spc/projects/LEM/misc/process.so",
   },
   {
-    module = "org.conman.strcore",
+    name = "org.conman.strcore",
     os     = "SunOS",
     cpu    = "sparcv9",
     file   = "/home/spc/projects/LEM/misc/strcore.so",
   },
   {
-    module  = "org.conman.sys",
+    name  = "org.conman.sys",
     os      = "SunOS",
     cpu     = "sparcv9",
     file    = "/home/spc/projects/LEM/misc/sys.so",
     version = "1.0",
   },
   {
-    module  = "org.conman.syslog",
+    name  = "org.conman.syslog",
     os      = "SunOS",
     cpu     = "sparcv9",
     file    = "/home/spc/projects/LEM/misc/syslog.so",
@@ -156,22 +156,22 @@ LIST =
   "org.conman.base64",
   "org.conman.crc",
   {
-    module  = "org.conman.env",
+    name  = "org.conman.env",
     version = "1.0.0",
   },
   {
-    module  = "org.conman.errno",
+    name  = "org.conman.errno",
     version = "1.0.0",
   },
   "org.conman.fsys",
   "org.conman.fsys.magic",
   "org.conman.hash",
   {
-    module  = "org.conman.iconv",
+    name  = "org.conman.iconv",
     version = "1.1.1",
   },
   {
-    module  = "org.conman.math",
+    name  = "org.conman.math",
     version = "5.1",
   },
   "org.conman.net",
@@ -180,11 +180,11 @@ LIST =
   "org.conman.process",
   "org.conman.strcore",
   {
-    module  = "org.conman.sys",
+    name  = "org.conman.sys",
     version = "1.1.1",
   },
   {
-    module  = "org.conman.syslog",
+    name  = "org.conman.syslog",
     version = "1.0.2",
   },
   "org.conman.tcc",
@@ -207,13 +207,13 @@ LIST =
   -- ********************************************************
 
   {
-    module  = "lpeg",
+    name  = "lpeg",
     file    = "/usr/local/lib/lua/5.1/lpeg.so",
     version = "0.10",
     license = "MIT",
   },
   {
-    module  = "re",
+    name  = "re",
     file    = "/usr/local/share/lua/5.1/re.lua",
     version = "0.10",
     license = "MIT",
@@ -224,27 +224,80 @@ LIST =
   -- ********************************************************
   
   {
-    module  = "lpeg",
+    name  = "lpeg",
     version = "0.12",
     lvmin   = "5.1",
     lvmax   = "5.1",
     license = "MIT",
   },
   {
-    module  = "lpeg",
+    name  = "lpeg",
     version = "0.12",
     lvmin   = "5.2",
     lvmax   = "5.2",
     license = "MIT",
   },
   {
-    module  = "re",
+    name  = "re",
     version = "0.12",
     lvmin   = "5.1",
     lvmax   = "5.2",
     license = "MIT",
   },  
 
+  -- ********************************************************
+  -- other miscellaneous modules
+  -- ********************************************************
+  
+  {
+    name  = "zlib",
+    version = "0.4.work3",
+    license = "MIT/X11",
+  },
+  {    
+    name  = "socket",
+    license = "MIT/X11",
+    version = "2.0.2"
+  },
+  {
+    name  = "socket.core",
+    version = "2.0.2",
+    license = "MIT/X11",
+  },
+  {
+    name  = "socket.ftp",
+    version = "2.0.2",
+    license = "MIT/X11",
+  },
+  {
+    name  = "socket.http",
+    version = "2.0.2",
+    license = "MIT/X11",
+  },
+  {
+    name  = "socket.smtp",
+    version = "2.0.2",
+    license = "MIT/X11",
+  },
+  {
+    name  = "socket.tp",
+    version = "2.0.2",
+    license = "MIT/X11",
+  },
+  {
+    name  = "socket.url",
+    version = "2.0.2",
+    license = "MIT/X11",
+  },
+  {
+    name  = "ltn12",
+    version = "1.0.1",
+    license = "MIT/X11",
+  },
+}
+
+FILES = 
+{
   -- ********************************************************
   -- Now, let's include some files
   -- ********************************************************
