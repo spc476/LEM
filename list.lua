@@ -139,7 +139,7 @@ MODULES =
     os      = "SunOS",
     cpu     = "sparcv9",
     file    = "/home/spc/projects/LEM/misc/sys.so",
-    version = "1.0",
+    version = "1.0.0",
   },
   {
     name  = "org.conman.syslog",
@@ -181,7 +181,7 @@ MODULES =
   "org.conman.strcore",
   {
     name  = "org.conman.sys",
-    version = "1.1.1",
+    version = "1.2.0",
   },
   {
     name  = "org.conman.syslog",
