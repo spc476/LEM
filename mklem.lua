@@ -24,6 +24,11 @@
 --
 -- ********************************************************************
 
+if #arg ~= 2 then
+  io.stderr:write("usage: ",arg[0]," listfile [lemfile]\n")
+  os.exit(1)
+end
+
 dump = require "org.conman.table".dump
 zlib = require "zlib"
 zipw = require "org.conman.zip.write"
@@ -32,7 +37,8 @@ sys  = require "org.conman.sys"
 
 LIST = { sys = sys }
 do
-  local f = loadfile("list.lua")
+  local file = arg[1]
+  local f    = loadfile(file)
   setfenv(f,LIST)
   f()
   
@@ -54,7 +60,7 @@ local SEP     = package.config:sub(3,3)
 local MARK    = package.config:sub(5,5)
 local VERSION = tonumber(_VERSION:match("^Lua (.*)"))
 local SEGMENT = "([^%" .. SEP .. "]*)%" .. SEP .. "*"
-local ZIP     = io.open(arg[1] or "sample.lem","wb")
+local ZIP     = io.open(arg[2] or "sample.lem","wb")
 local CDH     = {}
 
 -- ***********************************************************************
