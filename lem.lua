@@ -24,12 +24,13 @@
 -- ********************************************************************
 
 local _VERSION     = _VERSION
-local load         = load
+local _G           = _G
+local loadstring   = loadstring
 local setmetatable = setmetatable
 
-local sys    = require "org.conman.sys"
-local zipr   = require "org.conman.zip.read"
-local zlib   = require "zlib"
+local sys     = require "org.conman.sys"
+local zipr    = require "org.conman.zip.read"
+local zlib    = require "zlib"
 
 local io      = require "io"
 local os      = require "os"
@@ -45,6 +46,7 @@ end
 local MODULES = {}
 local APP     = {}
 local FILES   = {}
+local SCRIPTS = {}
 
 -- ************************************************************************
 
@@ -67,13 +69,8 @@ local function lemloader(name)
   end
   
   if not MODULES[name].extra[0x454C].os then
-    local func,err = load(function() 
-                            local d = chunk 
-                            chunk = nil 
-                            return d 
-                          end,
-                          name
-                         )
+    local func,err = loadstring(chunk,name)
+
     if not func then
       return string.format("\n\t%s: %s",name,err)
     else
@@ -126,6 +123,8 @@ local function store(entry,lemfile)
     dolist = MODULES
   elseif list == 'APP' then
     dolist = APP
+  elseif list == 'SCRIPTS' then
+    dolist = SCRIPTS
   else
     dolist = FILES
     entry.name = name
@@ -139,6 +138,48 @@ local function store(entry,lemfile)
     if  entry.extra[0x454C].os  == sys.SYSNAME
     and entry.extra[0x454C].cpu == sys.CPU then
       add(dolist,name)
+    end
+  end
+end
+
+-- ************************************************************************
+
+do
+  local lua_loadfile = _G.loadfile
+  
+  function _G.loadfile(name)
+    if SCRIPTS[name] then
+      lem = io.open(SCRIPTS[name].FILE,"r")
+      if lem then
+        lem:seek('set',SCRIPTS[name].offset)
+        local file = zipr_file(lem)
+        
+        if not file.extra[0x454C] 
+        or file.extra[0x454C].language ~= "Lua"
+        or VERSION < entry.extra[0x454C].lvmin
+        or VERSION > entyr.extra[0x454C].lvmax then
+          return nil,"cannot open " .. name .. ": not a script or wrong Lua version"
+        end
+        
+        local compress = lem:read(SCRIPTS[name].csize)
+        local chunk    = zlib.decompress(compress,-zlib.DEFAULT_WINDOWBITS)
+        local func,err = loadstring(chunk,name)
+        
+        if not func then return err end
+        _G.setfenv(func,_G)
+        return func
+      end
+    else
+      return lua_loadfile(name)
+    end
+  end
+   
+  function _G.dofile(filename)
+    local func,err = _G.loadfile(filename)
+    if not func then 
+      error(err)
+    else
+      func()
     end
   end
 end
