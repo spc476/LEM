@@ -148,16 +148,20 @@ do
   local lua_loadfile = _G.loadfile
   
   function _G.loadfile(name)
+    if name:match("^%.%/") then
+      name = name:sub(3,-1)
+    end
+    
     if SCRIPTS[name] then
       lem = io.open(SCRIPTS[name].FILE,"r")
       if lem then
         lem:seek('set',SCRIPTS[name].offset)
-        local file = zipr_file(lem)
+        local file = zipr.file(lem)
         
         if not file.extra[0x454C] 
         or file.extra[0x454C].language ~= "Lua"
-        or VERSION < entry.extra[0x454C].lvmin
-        or VERSION > entyr.extra[0x454C].lvmax then
+        or VERSION < file.extra[0x454C].lvmin
+        or VERSION > file.extra[0x454C].lvmax then
           return nil,"cannot open " .. name .. ": not a script or wrong Lua version"
         end
         
