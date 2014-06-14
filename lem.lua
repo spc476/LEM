@@ -190,7 +190,7 @@ end
 
 -- ************************************************************************
 
-local function loadlem(lemfile)
+local function loadlem(lemfile,appname)
   local lem  = io.open(lemfile,"rb")
   local eocd = zipr.eocd(lem)
   local dir  = zipr.dir(lem,eocd.entries)
@@ -198,6 +198,35 @@ local function loadlem(lemfile)
   for i = 1 , #dir do
     store(dir[i],lemfile)
   end
+  
+  if APP[appname] then
+    lem:seek('set',APP[appname].offset)
+    local file = zipr.file(lem)
+    
+    if not file.extra[0x454C]
+    or file.extra[0x454C].language ~= "Lua"
+    or VERSION < file.extra[0x454C].lvmin
+    or VERSION > file.extra[0x454C].lvmax then
+      lem:close()
+      return nil,"cannot open " .. appname .. ": not a script or wrong Lua version"
+    end
+    
+    local compress = lem:read(APP[appname].csize)
+    local chunk    = zlib.decompress(compress,-zlib.DEFAULT_WINDOWBITS)
+
+    if chunk then
+      chunk = chunk:match("^#[^%c]+%c(.*)")
+    end
+    
+    local func,err = loadstring(chunk,appname)
+    
+    if func then
+      _G.setfenv(func,_G)
+    end
+    lem:close()
+    return func,err
+  end
+  
   lem:close()
 end
 
