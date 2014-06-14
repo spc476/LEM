@@ -98,6 +98,11 @@ rocks_trees = {
 ]]
 })
 
+table.sort(MODULES,function(a,b)
+  return a.name < b.name
+end)
+
+
 OUT:write(dump("MODULES",MODULES))
 OUT:write(dump("SCRIPTS",SCRIPTS))
 OUT:write(dump("APP",APP))
