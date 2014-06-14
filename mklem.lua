@@ -95,6 +95,11 @@ local function open_module(entry)
   local extra = new_extra(entry)
   local file
   
+  if entry.contents then
+    local info = { st_size = #entry.contents , st_mtime = os.time() }
+    return nil,info,extra
+  end
+  
   if entry.file then
     local info  = fsys.stat(entry.file)
     extra.cpu   = entry.cpu
@@ -121,8 +126,16 @@ local function write_entry(entry,section,fp,info,extra)
   local file = zipw.new('file')
   file.name  = section .. "/" .. (entry.name or entry.file)
   
-  local data = fp:read("*a")
-  local cmp  = zlib.compress(data,nil,nil,-15)
+  local data
+  
+  if fp then
+    data = fp:read("*a")
+    fp:close()
+  else
+    data = entry.contents
+  end
+  
+  local cmp = zlib.compress(data,nil,nil,-15)
   
   file.usize     = info.st_size
   file.csize     = #cmp
@@ -137,7 +150,6 @@ local function write_entry(entry,section,fp,info,extra)
   
   table.insert(CDH,dir)
   ZIP:write(cmp)
-  fp:close()
 end  
 
 -- **********************************************************************
@@ -153,8 +165,16 @@ end
 
 for _,list in ipairs { "APP" , "SCRIPTS" , "FILES" } do
   for _,file in ipairs(LIST[list]) do
-    local fp       = io.open(file.file)
-    local info     = fsys.stat(file.file)
+    local fp
+    local info
+    
+    if file.file then
+      fp   = io.open(file.file)
+      info = fsys.stat(file.file)
+    else
+      info = { st_size = #file.contents , st_mtime = os.time() }
+    end
+    
     local extra    = {}
     extra.version  = file.version
     extra.license  = file.license
